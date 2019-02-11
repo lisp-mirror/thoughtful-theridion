@@ -53,6 +53,8 @@
                  (declare (ignorable url headers code))
                  (cond ((cl-ppcre:scan "^text/html(;|$)" content-type)
                         (ignore-errors (html5-parser:parse-html5 content)))
+                       ((cl-ppcre:scan "^text/xhtml(;|$)" content-type)
+                        (ignore-errors (html5-parser:parse-html5 content)))
                        ((cl-ppcre:scan "^(text|application)/(x-)?json(;|$)" 
                                        content-type)
                         (ignore-errors (cl-json:decode-json-from-string
