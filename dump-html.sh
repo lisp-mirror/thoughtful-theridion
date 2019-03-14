@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
       (thoughtful-theridion:current-url fetcher) \"$1\"
       (thoughtful-theridion:current-status-code fetcher) 200)
 (thoughtful-theridion:parse-obtained-content fetcher)
-(write 
+(princ 
   (or (ignore-errors
          (thoughtful-theridion:html-element-to-text
             (make-instance (quote thoughtful-theridion:html-textifier-protocol-inspector))
