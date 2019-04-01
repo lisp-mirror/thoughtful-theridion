@@ -2,17 +2,20 @@
   ((branches :accessor page-walker-branches 
              :initform nil :initarg :branches)))
 
-(defparameter *page-walker-terminator* (gensym))
+(defvar *page-walker-terminator* (make-instance 'page-walker-brancher :branches ()))
+
+(defmethod page-walker-terminator-p ((x page-walker-brancher))
+  (null (page-walker-branches x)))
+
+(defmethod page-walker-terminator-p ((x t)) nil)
 
 (defun page-walker-brancher (l)
-  (let* ((l (remove *page-walker-terminator* l)))
-    (if l
-      (make-instance 'page-walker-brancher :branches l)
-      *page-walker-terminator*)))
+  (let* ((l (remove-if 'page-walker-terminator-p l)))
+    (if (null l) *page-walker-terminator*
+      (make-instance 'page-walker-brancher :branches l))))
 
 (defun page-walker-brancher-content (x)
-  (cond ((eq x *page-walker-terminator*) nil)
-        ((typep x 'page-walker-brancher)
+  (cond ((typep x 'page-walker-brancher)
          (loop for y in (page-walker-branches x)
                append (if (typep y 'page-walker-brancher)
                         (page-walker-brancher-content y)
@@ -24,7 +27,7 @@
     `(page-walker-brancher
        ,(if (null forms) nil
           `(let ((,var ,(first forms)))
-             (unless (eq ,var *page-walker-terminator*)
+             (unless (page-walker-terminator-p ,var)
                (list ,var
                      (page-walker-brancher-progn ,@(rest forms)))))))))
 
@@ -49,7 +52,7 @@
                                ,@body))
                  (result-var (second clause))
                  (rest-result-var (gensym))
-                 (descend (gensym)))
+                 (descend (gensym "let-clause-convertor")))
              `(let ((,result-var
                       (with-page (,var ,var :fetch nil :keep-brancher t)
                                  ,@(rest (rest clause)))))
@@ -63,7 +66,7 @@
                                              for ,rest-result-var :=
                                              (,descend ,var)
                                              until
-                                             (eq *page-walker-terminator*
+                                             (page-walker-terminator-p
                                                  ,rest-result-var)
                                              collect ,rest-result-var))
                                      (let ((,result-var ,result-var)
@@ -108,13 +111,13 @@
   (let* ((fetcher-var (gensym))
          (top-wrapper (if fetch
                         `(let* ((,fetcher-var ,fetcher)
-                                (*base-url* ,value)
+                                (*base-url* ,var)
                                 (,var (progn
-                                        (navigate ,fetcher-var ,value)
+                                        (navigate ,fetcher-var ,var)
                                         ,(if use-fetcher
                                            fetcher-var
                                            `(parsed-content ,fetcher-var))))))
-                        `(let* ((,var ,value)))))
+                        `(let* ((,var ,var)))))
          (first-clause (first body))
          (main-body
            (if (null body)
@@ -132,7 +135,7 @@
                          `(with-page (,var ,var :fetch nil :keep-brancher t)
                                      ,@(rest body)))
                        (rest-result-var (gensym))
-                       (descend (gensym)))
+                       (descend (gensym "with-page")))
                    `(let ((,result-var ,form))
                       (labels ((,descend (,result-var)
                                          (if (typep ,result-var
@@ -144,7 +147,7 @@
                                                    for ,rest-result-var :=
                                                    (,descend ,var)
                                                    until
-                                                   (eq *page-walker-terminator*
+                                                   (page-walker-terminator-p
                                                        ,rest-result-var)
                                                    collect ,rest-result-var))
                                            (let ((,var ,result-var))
@@ -155,8 +158,9 @@
            (if recurse `(labels ((,recurse (,var) ,main-wrapped))
                           (,recurse ,var))
              main-wrapped))
+         (full-computation-wrapped `(let ((,var ,value)) ,full-computation))
          (unpacked-result
            (if keep-brancher
-             full-computation
-             `(page-walker-brancher-content ,full-computation))))
+             full-computation-wrapped
+             `(page-walker-brancher-content ,full-computation-wrapped))))
     unpacked-result))
