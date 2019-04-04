@@ -102,13 +102,16 @@
 
 (defmacro with-page ((var value &key
                           (recurse nil)
+                          (recur nil)
                           (fetcher '(make-instance 'http-fetcher))
                           (fetch t)
                           (use-fetcher nil)
                           (keep-brancher nil))
                      &body body
                      &environment env)
-  (let* ((fetcher-var (gensym))
+  (assert (not (and recur recurse)))
+  (let* ((recur (or recur recurse))
+         (fetcher-var (gensym))
          (top-wrapper (if fetch
                         `(let* ((,fetcher-var ,fetcher)
                                 (*base-url* ,var)
@@ -125,7 +128,7 @@
              (multiple-value-bind (form full)
                (page-walker-clause-to-form
                  first-clause var env
-                 :extra-functions (list recurse)
+                 :extra-functions (list recur)
                  :extra-macros nil
                  :aggressive t
                  :body (rest body))
@@ -155,8 +158,8 @@
                         (,descend ,result-var))))))))
          (main-wrapped (append top-wrapper (list main-body)))
          (full-computation
-           (if recurse `(labels ((,recurse (,var) ,main-wrapped))
-                          (,recurse ,var))
+           (if recur `(labels ((,recur (,var) ,main-wrapped))
+                          (,recur ,var))
              main-wrapped))
          (full-computation-wrapped `(let ((,var ,value)) ,full-computation))
          (unpacked-result
