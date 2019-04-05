@@ -234,10 +234,10 @@
    (type (eql :element)) (tag (eql :sub)) element)
   (format nil "{↓↓ ~a ↓↓}" (call-next-method)))
 
-(defclass recurse-on-noscript-mixin (html-textifier-protocol) ())
+(defclass recur-on-noscript-mixin (html-textifier-protocol) ())
 
 (defmethod html-element-to-text-dispatch
-  ((protocol recurse-on-noscript-mixin)
+  ((protocol recur-on-noscript-mixin)
    (type (eql :element)) (tag (eql :noscript))
    element)
   (html-element-to-text
@@ -249,6 +249,10 @@
             element))))))
 
 (defclass html-textifier-protocol-inspector
-  (recurse-on-noscript-mixin
+  (recur-on-noscript-mixin
     show-formatting-mixin show-ui-texts-mixin show-urls-mixin
     html-textifier-protocol) ())
+
+(defun html-inner-text (element)
+  (html-element-to-text
+    element (make-instance 'html-textifier-protocol)))

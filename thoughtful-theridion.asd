@@ -24,4 +24,5 @@
    (:file "basic-retrieve" :depends-on ("package" "charsets" "urlencode"))
    (:file "html-textify" :depends-on ("basic-retrieve"))
    (:file "html-forms" :depends-on ("package"))
-   (:file "util" :depends-on ("basic-retrieve" "html-textify"))))
+   (:file "util" :depends-on ("basic-retrieve" "html-textify"))
+   (:file "walker-dsl" :depends-on ("package" "basic-retrieve"))))

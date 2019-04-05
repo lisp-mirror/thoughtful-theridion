@@ -8,6 +8,7 @@
     #:html-textifier-protocol
     #:html-textifier-protocol-inspector
     #:html-element-to-text
+    #:html-inner-text
     #:save-web-page
     #:save-web-form
     #:parsed-content
@@ -19,5 +20,9 @@
     #:parse-obtained-content
     #:*base-url*
     #:real-url
+    #:page-walk
+    #:page-walk-each
+    #:page-walk-each-of
+    #:page-walk-maybe-each-of
     ))
 
