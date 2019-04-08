@@ -76,16 +76,18 @@
                 (labels ((,descend (,result-var)
                                    (if (typep ,result-var
                                               'page-walker-brancher)
-                                     (page-walk-each-of
-                                       (loop for ,var in
-                                             (page-walker-branches
-                                               ,result-var)
-                                             for ,rest-result-var :=
-                                             (,descend ,var)
-                                             until
-                                             (page-walker-terminator-p
+                                     (if (null (page-walker-branches ,result-var))
+                                       ,result-var
+                                       (page-walk-each-of
+                                         (loop for ,var in
+                                               (page-walker-branches
+                                                 ,result-var)
+                                               for ,rest-result-var :=
+                                               (,descend ,var)
+                                               until
+                                               (page-walker-terminator-p
                                                  ,rest-result-var)
-                                             collect ,rest-result-var))
+                                               collect ,rest-result-var)))
                                      (let ((,result-var ,result-var)
                                            (,var ,var))
                                        ,main-form))))
@@ -186,16 +188,19 @@
                       (labels ((,descend (,result-var)
                                          (if (typep ,result-var
                                                     'page-walker-brancher)
-                                           (page-walk-each-of
-                                             (loop for ,var in
-                                                   (page-walker-branches
-                                                     ,result-var)
-                                                   for ,rest-result-var :=
-                                                   (,descend ,var)
-                                                   until
-                                                   (page-walker-terminator-p
+                                           (if (null (page-walker-branches
+                                                       ,result-var))
+                                             ,result-var
+                                             (page-walk-each-of
+                                               (loop for ,var in
+                                                     (page-walker-branches
+                                                       ,result-var)
+                                                     for ,rest-result-var :=
+                                                     (,descend ,var)
+                                                     until
+                                                     (page-walker-terminator-p
                                                        ,rest-result-var)
-                                                   collect ,rest-result-var))
+                                                     collect ,rest-result-var)))
                                            (let ((,var ,result-var))
                                              ,rest-form))))
                         (,descend ,result-var))))))))

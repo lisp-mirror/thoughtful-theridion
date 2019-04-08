@@ -255,4 +255,5 @@
 
 (defun html-inner-text (element)
   (html-element-to-text
-    element (make-instance 'html-textifier-protocol)))
+    (make-instance 'html-textifier-protocol)
+    element))
