@@ -28,6 +28,12 @@
 (defmethod page-walk-maybe-each-of ((l page-walker-brancher))
   (page-walk-maybe-each-of (page-walker-branches l)))
 
+(defmacro page-walk-each-of-nonempty (l else)
+  (let ((var (gensym)))
+    `(let ((,var (page-walker-brancher-content ,l)))
+       (unless ,var ,else)
+       (page-walk-each-of ,var))))
+
 (defun page-walker-brancher-content (x)
   (cond ((typep x 'page-walker-brancher)
          (loop for y in (page-walker-branches x)
@@ -41,6 +47,7 @@
     `(page-walk-each-of
        ,(if (null forms) nil
           `(let ((,var ,(first forms)))
+             (declare (ignorable ,var))
              (unless (page-walker-terminator-p ,var)
                (list ,var
                      (page-walk-each ,@(rest forms)))))))))
@@ -163,7 +170,7 @@
                                         ,(if use-fetcher
                                            fetcher-var
                                            `(parsed-content ,fetcher-var))))))
-                        `(let* ((,var ,var)))))
+                        `(let* ((,var ,var)) (declare (ignorable ,var)))))
          (first-clause (first body))
          (main-body
            (if (null body)
@@ -202,6 +209,7 @@
                                                        ,rest-result-var)
                                                      collect ,rest-result-var)))
                                            (let ((,var ,result-var))
+                                             (declare (ignorable ,var))
                                              ,rest-form))))
                         (,descend ,result-var))))))))
          (main-wrapped (append top-wrapper (list main-body)))
@@ -209,7 +217,9 @@
            (if recur `(labels ((,recur (,var) ,main-wrapped))
                           (,recur ,var))
              main-wrapped))
-         (full-computation-wrapped `(let ((,var ,value)) ,full-computation))
+         (full-computation-wrapped `(let ((,var ,value))
+                                      (declare (ignorable ,var))
+                                      ,full-computation))
          (unpacked-result
            (if keep-brancher
              full-computation-wrapped

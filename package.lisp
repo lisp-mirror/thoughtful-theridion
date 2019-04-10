@@ -24,5 +24,6 @@
     #:page-walk-each
     #:page-walk-each-of
     #:page-walk-maybe-each-of
+    #:page-walk-each-of-nonempty
     ))
 
