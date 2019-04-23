@@ -21,7 +21,9 @@
   ((:file "package")
    (:file "charsets" :depends-on ("package"))
    (:file "urlencode" :depends-on ("package" "charsets"))
-   (:file "basic-retrieve" :depends-on ("package" "charsets" "urlencode"))
+   (:file "date-parsing-experiments" :depends-on ("package"))
+   (:file "basic-retrieve" :depends-on ("package" "charsets" "urlencode"
+                                        "date-parsing-experiments"))
    (:file "html-textify" :depends-on ("basic-retrieve"))
    (:file "html-forms" :depends-on ("package"))
    (:file "util" :depends-on ("basic-retrieve" "html-textify"))
