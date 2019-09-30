@@ -55,6 +55,8 @@
                         (ignore-errors (html5-parser:parse-html5 content)))
                        ((cl-ppcre:scan "^text/xhtml(;|$)" content-type)
                         (ignore-errors (html5-parser:parse-html5 content)))
+                       ((cl-ppcre:scan "^application/xhtml([+]xml)?(;|$)" content-type)
+                        (ignore-errors (html5-parser:parse-html5 content)))
                        ((cl-ppcre:scan "^(text|application)/(x-)?json(;|$)" 
                                        content-type)
                         (ignore-errors (cl-json:decode-json-from-string
