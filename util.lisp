@@ -2,7 +2,8 @@
 
 (defun save-web-page (url target basename &key 
                           fetcher fetcher-parameters
-                          drakma-args html-textifier-protocol)
+                          drakma-args html-textifier-protocol
+                          html-content-score-protocol)
   (ensure-directories-exist (format nil "~a/" target))
   (let* ((f (or fetcher
                 (apply 'make-instance 'http-fetcher fetcher-parameters)))
@@ -18,7 +19,7 @@
       (format out "~a~%" (current-content f)))
     (with-open-file (out (format nil "~a/~a.html.txt" target basename)
                          :direction :output)
-      (format out "→[ ~a ]~%→[ ~a ]~%~a~%~{~%(~{~s~%~})~%~%~}~S~%#.~S~%~%~a~%"
+      (format out "→[ ~a ]~%→[ ~a ]~%~a~%~a~%~{~%(~{~s~%~})~%~%~}~S~%#.~S~%~%~a~%"
               url (current-url f)
               (or
                 (ignore-errors
@@ -27,6 +28,16 @@
                       html-textifier-protocol
                       (make-instance 'html-textifier-protocol-inspector))
                     (css-selectors:query1 "head title" (parsed-content f))))
+                "")
+              (or
+                (ignore-errors
+                  (html-extract-main-content 
+                    (parsed-content f)
+                    (or html-content-score-protocol
+                        (make-instance 'html-text-score-protocol))
+                    (or 
+                      html-textifier-protocol
+                      (make-instance 'html-textifier-protocol-inspector))))
                 "")
               (when (parsed-content f)
                 (loop for form in (css-selectors:query

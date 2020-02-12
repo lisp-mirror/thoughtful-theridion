@@ -234,6 +234,11 @@
    (type (eql :element)) (tag (eql :sub)) element)
   (format nil "{↓↓ ~a ↓↓}" (call-next-method)))
 
+(defmethod html-element-to-text-dispatch
+  ((protocol show-formatting-mixin)
+   (type (eql :element)) (tag (eql :li)) element)
+  (format nil "{>>> ~a <<<}" (call-next-method)))
+
 (defclass recur-on-noscript-mixin (html-textifier-protocol) ())
 
 (defmethod html-element-to-text-dispatch

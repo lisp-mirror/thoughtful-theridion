@@ -5,7 +5,7 @@ unset $(set | grep '^_.*NIX_LISP*' | cut -d = -f 1)
 NIX_LISP_ASDF_PATHS="$(realpath "$(dirname "$0")")
 $PWD"
 
-dependencies="drakma cl_plus_ssl cl-html5-parser parenscript cl-ppcre cl-json css-selectors css-selectors-simple-tree babel $THOUGHTFUL_THERIDION_EXTRA_DEPENDENCIES"
+dependencies="drakma cl_plus_ssl cl-html5-parser parenscript cl-ppcre cl-json css-selectors css-selectors-simple-tree babel cl-unicode $THOUGHTFUL_THERIDION_EXTRA_DEPENDENCIES"
 
 test -n "$THOUGHTFUL_THERIDION_NIX_GC_PIN" && {
         mkdir -p "$(dirname "$THOUGHTFUL_THERIDION_NIX_GC_PIN")"

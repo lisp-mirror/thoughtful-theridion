@@ -61,7 +61,10 @@
                                        content-type)
                         (ignore-errors (cl-json:decode-json-from-string
                                          content)))
-                       (t (let* ((document (html5-parser:make-document))
+                       (t (format *trace-output*
+                                  "Unrecongnised content-type: ~a~%"
+                                  content-type)
+                          (let* ((document (html5-parser:make-document))
                                  (pre (html5-parser:make-element document "pre" nil))
                                  (text (html5-parser:make-text-node document content)))
                             (html5-parser:node-append-child pre text)

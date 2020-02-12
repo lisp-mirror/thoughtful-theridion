@@ -14,7 +14,7 @@
                        :babel
                        :css-selectors
                        :css-selectors-simple-tree
-                       :cl-ppcre
+                       :cl-ppcre :cl-unicode
                        :parenscript)
   
   :components
@@ -26,5 +26,6 @@
                                         "date-parsing-experiments"))
    (:file "html-textify" :depends-on ("basic-retrieve"))
    (:file "html-forms" :depends-on ("package"))
-   (:file "util" :depends-on ("basic-retrieve" "html-textify"))
+   (:file "html-main-text" :depends-on ("package" "html-textify"))
+   (:file "util" :depends-on ("basic-retrieve" "html-textify" "html-main-text"))
    (:file "walker-dsl" :depends-on ("package" "basic-retrieve"))))

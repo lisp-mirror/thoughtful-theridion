@@ -248,3 +248,9 @@
 (html-element-to-text 
   (make-instance 'html-textifier-protocol-inspector)
   (css-selectors:query1 "div.morelink > a:nth-last-child(2)" (parsed-content *fetcher*)))
+
+(navigate *fetcher* "http://funcall.blogspot.com/2020/01/afraid-of-recursion.html")
+(html-extract-main-content
+  (parsed-content *fetcher*)
+  (make-instance 'html-text-score-protocol)
+  (make-instance 'html-textifier-protocol-inspector))
