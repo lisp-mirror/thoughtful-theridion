@@ -69,7 +69,6 @@ as readable content in case this element is picked as a part of main content.
       text
       "Alphabetic" "Sentence_Terminal" "Punctuation")
     (let* ((commas (- punctuation sentences))
-           (total (length text))
            (length-points (min 3 (truncate letters 90))))
       (if (< letters 25) 0 (+ commas length-points 1)))))
 
@@ -102,6 +101,7 @@ as readable content in case this element is picked as a part of main content.
           (multiple-value-bind
             (score level-scores text content)
             (html-score-content protocol c cache)
+            (declare (ignorable score))
             (push level-scores top-level-scores)
             (when text (push text texts))
             (when content (push content content-children))))
@@ -143,6 +143,7 @@ as readable content in case this element is picked as a part of main content.
     (multiple-value-bind
       (sub-scores own-text content)
       (collect-child-scoring-data protocol element cache)
+      (declare (ignorable sub-scores))
       (values -1 (list -0.1) own-text content)))
   (def-html-score-content
     (:element 
@@ -157,6 +158,7 @@ as readable content in case this element is picked as a part of main content.
     (multiple-value-bind
       (sub-scores own-text content)
       (collect-child-scoring-data protocol element cache)
+      (declare (ignorable sub-scores))
       (values (html-score-text protocol own-text)
               (list) own-text content))))
 
@@ -169,7 +171,7 @@ as readable content in case this element is picked as a part of main content.
                               (content html5-parser::document-fragment)
                               parent document)
   (declare (ignorable content parent document))
-  (html5-parser:make-fragment))
+  (html5-parser:make-fragment document))
 (defmethod build-content-dom ((protocol html-text-score-protocol)
                               content
                               (parent null) document)
@@ -235,3 +237,48 @@ as readable content in case this element is picked as a part of main content.
                    nil nil))
     (if textify-protocol
       (html-element-to-text textify-protocol target) target)))
+
+(defclass html-classname-score-protocol (html-text-score-protocol) ())
+(defparameter *removable-classname-regexp*
+  "-ad-|ai2html|banner|breadcrumbs|combx|comment|community|cover-wrap|disqus|extra|footer|gdpr|header|legends|menu|related|remark|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|supplemental|ad-break|agegate|pagination|pager|popup|yom-remote")
+(defparameter *no-remove-classname-regexp* "and|article|body|column|content|main|shadow")
+(defparameter *boost-classname-regexp* "article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story")
+(defparameter *suppress-classname-regexp* "hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|gdpr|masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget")
+
+(with-html-score-content-protocol
+  (html-classname-score-protocol) (protocol element cache)
+  (def-html-score-content (:element (:form :fieldset :object :embed :footer :link :video
+                                           :iframe :input :textarea :select :button))
+    (values 0 () "" nil)))
+
+(defmethod html-score-content-dispatch ((protocol html-classname-score-protocol)
+                                        (type (eql :element)) tag element cache)
+  (let* ((class-attribute (html5-parser:element-attribute element "class"))
+         (id (html5-parser:element-attribute element "id"))
+         (classes (cl-ppcre:split
+                    (format nil "[~{~a~}]+" (or *whitespace-list* (list #\Space)))
+                    (string-downcase class-attribute)))
+         (boost
+           (+ (if (find-if (lambda (x)
+                             (cl-ppcre:scan *boost-classname-regexp* x))
+                           classes)
+                +25 0)
+              (if (find-if (lambda (x) 
+                             (cl-ppcre:scan *suppress-classname-regexp* x))
+                           classes)
+                -25 0)
+              (if (cl-ppcre:scan *boost-classname-regexp* id) +25 0)
+              (if (cl-ppcre:scan *suppress-classname-regexp* id) -25 0)))
+         (drop (and (not (cl-ppcre:scan *no-remove-classname-regexp* id))
+                    (not (find-if (lambda (x)
+                                    (cl-ppcre:scan *no-remove-classname-regexp* x))
+                                  classes))
+                    (or (cl-ppcre:scan *removable-classname-regexp* id)
+                        (find-if (lambda (x)
+                                   (cl-ppcre:scan *removable-classname-regexp* x))
+                                 classes)))))
+    (cond (drop (values 0 () "" nil))
+          (t (multiple-value-bind (score subscores pass-text content) (call-next-method)
+               (let* ((boosted (+ score boost))
+                      (pass-boosted (+ score (if (> boost 0) 0 (/ boost 2)))))
+                 (values boosted (cons pass-boosted (cdr subscores)) pass-text content)))))))

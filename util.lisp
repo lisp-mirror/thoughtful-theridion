@@ -3,7 +3,8 @@
 (defun save-web-page (url target basename &key 
                           fetcher fetcher-parameters
                           drakma-args html-textifier-protocol
-                          html-content-score-protocol)
+                          html-content-score-protocol
+                          skip-extract-main-content skip-cookies skip-forms)
   (ensure-directories-exist (format nil "~a/" target))
   (let* ((f (or fetcher
                 (apply 'make-instance 'http-fetcher fetcher-parameters)))
@@ -19,7 +20,7 @@
       (format out "~a~%" (current-content f)))
     (with-open-file (out (format nil "~a/~a.html.txt" target basename)
                          :direction :output)
-      (format out "→[ ~a ]~%→[ ~a ]~%~a~%~a~%~{~%(~{~s~%~})~%~%~}~S~%#.~S~%~%~a~%"
+      (format out "→[ ~a ]~%→[ ~a ]~%~a~%~a~%~{~%(~{~s~%~})~%~%~}~{~S~%#.~S~%~}~%~a~%"
               url (current-url f)
               (or
                 (ignore-errors
@@ -31,37 +32,39 @@
                 "")
               (or
                 (ignore-errors
-                  (html-extract-main-content 
-                    (parsed-content f)
-                    (or html-content-score-protocol
-                        (make-instance 'html-text-score-protocol))
-                    (or 
-                      html-textifier-protocol
-                      (make-instance 'html-textifier-protocol-inspector))))
+                  (unless skip-extract-main-content
+                    (html-extract-main-content 
+                      (parsed-content f)
+                      (or html-content-score-protocol
+                          (make-instance 'html-classname-score-protocol))
+                      (or 
+                        html-textifier-protocol
+                        (make-instance 'html-textifier-protocol-inspector)))))
                 "")
-              (when (parsed-content f)
+              (when (and (not skip-forms) (parsed-content f))
                 (loop for form in (css-selectors:query
                                     "form" (parsed-content f))
                       collect (form-parameters form :fetcher f)))
-              :cookie-jar
-              `(make-instance
-                 'drakma:cookie-jar
-                 :cookies
-                 (list
-                   ,@(loop for c in (drakma:cookie-jar-cookies (cookie-jar f))
-                           collect
-                           `(make-instance
-                              'drakma:cookie
-                              :name
-                              ,(drakma:cookie-name c)
-                              :value
-                              ,(drakma:cookie-value c)
-                              :domain
-                              ,(drakma:cookie-domain c)
-                              :path
-                              ,(drakma:cookie-path c)
-                              :expires
-                              ,(drakma:cookie-expires c)))))
+              (unless skip-cookies
+                :cookie-jar
+                `(make-instance
+                   'drakma:cookie-jar
+                   :cookies
+                   (list
+                     ,@(loop for c in (drakma:cookie-jar-cookies (cookie-jar f))
+                             collect
+                             `(make-instance
+                                'drakma:cookie
+                                :name
+                                ,(drakma:cookie-name c)
+                                :value
+                                ,(drakma:cookie-value c)
+                                :domain
+                                ,(drakma:cookie-domain c)
+                                :path
+                                ,(drakma:cookie-path c)
+                                :expires
+                                ,(drakma:cookie-expires c))))))
               (if (parsed-content f)
                 (html-element-to-text
                   (or html-textifier-protocol
