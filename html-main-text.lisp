@@ -54,11 +54,20 @@ as readable content in case this element is picked as a part of main content.
 
 (defgeneric html-score-text (protocol text))
 
+(defvar *unicode-property-cache* (make-hash-table :test 'equal))
+
 (defun unicode-property-counts (text &rest properties)
   (apply 'values
          (loop for p in properties
                collect (count-if
-                         (lambda (x) (cl-unicode:has-property x p))
+                         (lambda (x)
+                           (multiple-value-bind
+                             (value presentp)
+                             (gethash (list x p) *unicode-property-cache*)
+                             (if presentp value
+                               (setf
+                                 (gethash (list x p) *unicode-property-cache*)
+                                 (cl-unicode:has-property x p)))))
                          text))))
 
 (defmethod html-score-text ((protocol html-text-score-protocol) (text null)) 0)
@@ -254,7 +263,8 @@ as readable content in case this element is picked as a part of main content.
 (defmethod html-score-content-dispatch ((protocol html-classname-score-protocol)
                                         (type (eql :element)) tag element cache)
   (let* ((class-attribute (html5-parser:element-attribute element "class"))
-         (id (html5-parser:element-attribute element "id"))
+         (id (string-downcase
+               (html5-parser:element-attribute element "id")))
          (classes (cl-ppcre:split
                     (format nil "[~{~a~}]+" (or *whitespace-list* (list #\Space)))
                     (string-downcase class-attribute)))
@@ -280,5 +290,6 @@ as readable content in case this element is picked as a part of main content.
     (cond (drop (values 0 () "" nil))
           (t (multiple-value-bind (score subscores pass-text content) (call-next-method)
                (let* ((boosted (+ score boost))
-                      (pass-boosted (+ score (if (> boost 0) 0 (/ boost 2)))))
+                      (core-score (or (car subscores) 0))
+                      (pass-boosted (+ core-score (if (> boost 0) 0 (/ boost 2)))))
                  (values boosted (cons pass-boosted (cdr subscores)) pass-text content)))))))

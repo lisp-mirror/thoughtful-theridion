@@ -17,5 +17,5 @@ cd "$(dirname "$0")"
   (or (ignore-errors
          (thoughtful-theridion:html-element-to-text
             (make-instance (quote thoughtful-theridion:html-textifier-protocol-inspector))
-            (thoughtful-theridion:parsed-content fetcher)))
+            fetcher))
       \"\")))"
