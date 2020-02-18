@@ -78,8 +78,9 @@ as readable content in case this element is picked as a part of main content.
       text
       "Alphabetic" "Sentence_Terminal" "Punctuation")
     (let* ((commas (- punctuation sentences))
-           (length-points (min 3 (truncate letters 90))))
-      (if (< letters 25) 0 (+ commas length-points 1)))))
+           (length-points (min 3 (truncate letters 90)))
+           (sentence-points (min 20 (truncate sentences 5))))
+      (if (< letters 25) 0 (+ commas length-points sentence-points 1)))))
 
 (defmethod html-content-score-summarize ((protocol html-text-score-protocol)
                                          (scores list))

@@ -33,38 +33,42 @@
               (or
                 (ignore-errors
                   (unless skip-extract-main-content
-                    (html-extract-main-content 
-                      (parsed-content f)
-                      (or html-content-score-protocol
-                          (make-instance 'html-classname-score-protocol))
-                      (or 
-                        html-textifier-protocol
-                        (make-instance 'html-textifier-protocol-inspector)))))
+                    (cl-ppcre:regex-replace-all
+                      " *\\n *\\n"
+                      (html-extract-main-content 
+                        (parsed-content f)
+                        (or html-content-score-protocol
+                            (make-instance 'html-classname-score-protocol))
+                        (or 
+                          html-textifier-protocol
+                          (make-instance 'html-textifier-protocol-formatting-inspector)))
+                      (coerce (list #\Newline #\Newline) 'string))))
                 "")
               (when (and (not skip-forms) (parsed-content f))
                 (loop for form in (css-selectors:query
                                     "form" (parsed-content f))
                       collect (form-parameters form :fetcher f)))
               (unless skip-cookies
-                :cookie-jar
-                `(make-instance
-                   'drakma:cookie-jar
-                   :cookies
-                   (list
-                     ,@(loop for c in (drakma:cookie-jar-cookies (cookie-jar f))
-                             collect
-                             `(make-instance
-                                'drakma:cookie
-                                :name
-                                ,(drakma:cookie-name c)
-                                :value
-                                ,(drakma:cookie-value c)
-                                :domain
-                                ,(drakma:cookie-domain c)
-                                :path
-                                ,(drakma:cookie-path c)
-                                :expires
-                                ,(drakma:cookie-expires c))))))
+                (list
+                  :cookie-jar
+                  `(make-instance
+                     'drakma:cookie-jar
+                     :cookies
+                     (list
+                       ,@(loop for c in (drakma:cookie-jar-cookies (cookie-jar f))
+                               collect
+                               `(make-instance
+                                  'drakma:cookie
+                                  :name
+                                  ,(drakma:cookie-name c)
+                                  :value
+                                  ,(drakma:cookie-value c)
+                                  :domain
+                                  ,(drakma:cookie-domain c)
+                                  :path
+                                  ,(drakma:cookie-path c)
+                                  :expires
+                                  ,(drakma:cookie-expires c)))))))
               (if (parsed-content f)
                 (html-element-to-text
                   (or html-textifier-protocol

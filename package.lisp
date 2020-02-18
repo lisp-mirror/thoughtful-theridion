@@ -18,6 +18,7 @@
     #:real-url
     ;; Converting HTML to text
     #:html-textifier-protocol
+    #:html-textifier-protocol-formatting-inspector
     #:html-textifier-protocol-inspector
     #:html-element-to-text
     #:html-inner-text

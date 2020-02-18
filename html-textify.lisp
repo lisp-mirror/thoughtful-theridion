@@ -195,7 +195,18 @@
 
 (defmethod html-element-to-text-dispatch
   ((protocol show-ui-texts-mixin) (type (eql :element)) tag element)
-  (let* ((attributes '("name" "id" "alt" "title"))
+  (let* ((attributes '( "alt" "title"))
+         (names (loop for a in attributes
+                     for v := (html5-parser:element-attribute element a)
+                     when v collect v))
+         (text (call-next-method)))
+    (if names (format nil "~{ ⚓[ ~a ]~}~a" names text) text)))
+
+(defclass show-id-texts-mixin (html-textifier-protocol) ())
+
+(defmethod html-element-to-text-dispatch
+  ((protocol show-id-texts-mixin) (type (eql :element)) tag element)
+  (let* ((attributes '("name" "id"))
          (names (loop for a in attributes
                      for v := (html5-parser:element-attribute element a)
                      when v collect v))
@@ -253,10 +264,14 @@
           (html5-parser:node-first-child
             element))))))
 
-(defclass html-textifier-protocol-inspector
+(defclass html-textifier-protocol-formatting-inspector
   (recur-on-noscript-mixin
     show-formatting-mixin show-ui-texts-mixin show-urls-mixin
     html-textifier-protocol) ())
+
+(defclass html-textifier-protocol-inspector
+  (show-id-texts-mixin
+    html-textifier-protocol-formatting-inspector) ())
 
 (defun html-inner-text (element)
   (html-element-to-text
