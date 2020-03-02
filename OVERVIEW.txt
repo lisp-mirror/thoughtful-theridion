@@ -1,0 +1,303 @@
+
+
+Thoughtful Theridion: crawling across the Web
+
+
+
+The modern idea of freely available information often implies publishing
+information in the World Wide Web.  The software typicaly used to access web
+content, GUI web browsers, are designed towards interactive use with
+retrieval, processing and consumption happenning at the same time, and without
+separation of consumed content by type.  This approach typically leads to
+content consumption requiring a constant network connection, relatively fast
+link rot with the user losing access to the content, and pretty high overhead
+in case when the content is just text in the first place.  The formats used
+for automated retrieval of publications, such as RSS feeds, help downloading
+the fresh content for later consumption and possibly archival.  On the other
+hand, the have to be provided separately by the author or publisher and are
+often missing, cover only the very recent content, contain partial content
+etc.
+
+Here we describe yet another glue library that simplifies writing recursive
+retrieval and processing of web pages, Thoughtful Theridion.  This library
+includes some functionality not found in typical Common Lisp web crawling
+libraries, such as extracting the main text on a web page and flexible
+conversion of HTML to a plain text representation.
+
+We also provide some observations on using Thoughtful Theridion as a user
+agent.
+
+
+
+Introduction
+
+The World Wide Web has become the most important way of publishing
+information.  In a way, it has come to define the notion of «freely available»
+information.  Unfortunately, the web has come to a state where the norm is
+interactive consumption of content using GUI browsers, regardless of
+suitability of specific content for such mode of consumption.  One implication
+is that consumption is depends on constant availability of network connection.
+Server issues can temporarily or permanently terminate user access to content
+that has already been downloaded previously.  Long term access to content and
+non-standard user-side tooling get a treatment ranging from reasonable effort
+in good cases (fortunately including the core web sites related to Common Lisp
+community) through complete indifference to intentional hostility.  And GUI
+browser development is driven by the needs of web apps, giving a browser a
+resource footprint and an attack surface out of proportion with the task of
+reading text content.
+
+General examples of tools
+
+A good example of server-side support of better client-side tooling are Really
+Simple Syndication (RSS) feeds.  They allow an automatic user agent to check
+periodically for new publications, and notify the user every time the server
+signals an update.  Some RSS feeds even include the updated content in a form
+with simplified formatting, aiding archival and permitting offline reading as
+well as use of simpler tools.  At the same time, providing any kind of
+flexibility requires the server to supply many separate RSS feeds, and a
+typical RSS feed typically covers only the most recent updates with one month
+being on the high end.  Also, problems with an RSS feed may stay unnoticed
+longer, as typically an overwhelming majority of audience uses the major web
+browsers, thus naturally leading to a matching allocation of testing and
+monitoring effort.
+
+Text-mode browsers provide do a lot less than GUI browsers, thus having much
+more reasonable resource demands and better security.  It is a relief to
+observe that for most sites where the main content is textual, text browsers
+provide a pretty good user experience, often better than GUI browsers with
+dynamic features disabled.  Using plain text for output also makes them usable
+as parts of an archiving toolchain.  On the other hand, the rendering is
+usually not configurable, and integration with other tools is often not a
+development priority.
+
+Browser extensions are providing some useful tools as a part of a GUI browser
+(with Firefox providing the most functionality to extension authors).  While
+they provide a lot of useful functionality and are invaluable when a web
+application is used, for static web documents they still require use of a GUI
+web browser with the implied resource footprint.  Additionally, the extensions
+are not typically written to interact with other extensions, thus modifying
+the behaviour of an extension is likely to require a fork.  They also need to
+be written in or translated to Javascript.
+
+An example of functionality implemented as a Javascript extension of GUI
+browsers that is logically separate and meaningful in other contexts is
+Arc90's and later Mozilla's Readability/Reader mode
+https://github.com/mozilla/readability/ (current Mozilla-maintained version).
+It analyzes the DOM tree and text distribution on the page to find the main
+text part of the page.  This is an example of functionality that is useful in
+many different contexts and can be naturally integrated with other tasks.
+
+Common Lisp tools
+
+The Common Lisp ecosystem contains quite a few tools helping with web crawling
+and similar tasks.
+
+CRAWLIK  https://github.com/vseloved/crawlik implements a general structure
+for web crawling tasks, as well as its own DSL to select and process parts of
+the page.
+
+Two libraries cl-kappa   https://launchpad.net/cl-kappa and CL-MECHANIZE
+https://github.com/joachifm/cl-mechanize both implement a small browser-like
+abstraction for making requests and manipulating the DOM structure of the
+returned page.  Both libraries mention Perl WWW::Mechanize library as a vague
+inspiration.
+
+The lQuery library  https://shinmera.github.io/lquery/ is a tool for
+navigating and modifying web page DOM trees partially inspired by jQuery.
+
+Ragno   https://github.com/fukamachi/ragno is a wrapper for implementing web
+scraping tasks on top of a Psychiq job queue.  Ragno currently recommends
+relying on lQuery for doing all of the processing.
+
+Other tools with some crawling functionality include cl-httparser,
+cl-web-crawler, phidippus etc.
+
+Goals of Thoughtful Theridion
+
+Thoughtful Theridion library currently has the following objectives.
+
+        • A browser-like abstraction for making requests and accessing the
+        fetched pages.  Support for cookies and forms.  • Presentation of
+        HTML contents as plain text in multiple ways.  A text representation
+        reach enough for page interaction using only the data in the produced
+        text.  • A DSL for crawling across a page and across a web site
+        consisting of many pages.  Reliance on CSS selectors for describing
+        elements inside the page.  Handling multiple items at the same level
+        of a web page.  • Extraction of the main part of the page.  •
+        Using the pages intended for human consumption.  • Flexible
+        extensibility via CLOS of as many parts as practical.
+
+Using standard CSS selectors for describing page elements allows reuse of
+selectors already written for some Javascript-based tool, as well as use of
+web development tools for writing and debugging selectors.
+
+The DSL for describing the handling of pages aims to describe a way of getting
+to the target from the top of the page, transparently handling the possibility
+of multiple similar paths leading to multiple targets (for example, multiple
+articles on planet.lisp.org).
+
+
+
+Structure of Thoughtful Theridion library
+
+The main class for network operations in Thoughtful Theridion is HTTP-FETCHER.
+The main method implemented for this class is NAVIGATE, taking a fetcher, a
+URL and additional arguments.  Current implementation uses Drakma
+https://edicl.github.io/drakma/ for retrieval, and accepts additional
+arguments according to the interface provided by Drakma.  Special handling is
+provided for cookies (allowing a fetcher object to maintain a persistent
+collection of cookies across the requests).  The user can also specify a
+redirect policy, following or avoiding redirects depending on situation.  This
+is unfortunately useful in some cases, as there are web sites returning text
+content with minimal formatting together with a redirect to a Javascript-only
+page.  If the fetched document is HTML, it is parsed using cl-html5-parser
+https://github.com/rotatef/cl-html5-parser and both raw content and the parsed
+DOM structure are saved.  A form-filling helper SUBMIT-FORM taking a fetcher
+instance and assignments, as well as optional information about the choice of
+the form on the page to submit, is also provided.
+
+The next block of functionality is presentation of a parsed HTML document in a
+plain text format.  This is implemented as the HTML-ELEMENT-TO-TEXT function.
+Of course, there is no single answer what is the best plain text
+representation of a given HTML element.  Sometimes the user just wants the
+text contained inside the element, sometimes it is desirable to hint at the
+existing formatting or show link targets etc.  The interface uses
+explicit-interface-passing as promoted in «LIL: CLOS reaches higher-order,
+sheds identity, and has a transformative experience»; the first argument is a
+conversion protocol.  In many cases it is just an object without any slots for
+dispatching; on the other hand, one could define an parametric interface and
+use objects with some slots examined by methods.  For more convenient
+extension, HTML-ELEMENT-TO-TEXT calls HTML-ELEMENT-TO-TEXT-DISPATCH with extra
+arguments describing the kind of a DOM node and its tag name (if applicable).
+This allows writing presentation methods with specializers on the tag name,
+such as the following.
+
+
+
+(defmethod html-element-to-text-dispatch
+  ((protocol show-formatting-mixin)
+   (type (eql :element)) (tag (eql :s)) element)
+  (format nil "{-- ~a --}" (call-next-method)))
+
+
+
+Another part of functionality is a DSL for selecting and processing elements
+on a single page or on multiple pages.  This DSL is used inside the PAGE-WALK
+macro.  The core logic of the walking DSL is based on having a sequence of
+points of interest.  Initially there is a single point of interest, be it the
+loaded page or passed fragment (in case of :FETCH NIL).  The default mode of
+evaluation is a depth-search application of further steps to each of the
+points of interest.  More precisely, we have a queue of points of interest for
+each clause; for the deepest clause with pending points of interest we take
+the first unprocessed point in the queue.  If applying the clause yields
+nothing, the entire process is stopped (whatever is left in the queues);
+otherwise the results are pushed to the deeper level (or the output).  Clauses
+can be strings (interpreted as CSS selectors), lists with the first elements
+being strings (interpreted as attribute requests), or forms.
+
+Some of the capabilities of the DSL can be illustrated by the following
+example.
+
+
+
+(page-walk (x "https://planet.lisp.org/")
+   "div#content > p > a" 
+   ("href" x) 
+   (page-walk (x x :recur recur) 
+      (let prev "tr:first-child > td > a" 
+        ("href" x)) 
+      (page-walk-each
+        (page-walk (x x :fetch nil :keep-brancher t)
+           "li > a"
+           ("href" x)
+           (if (cl-ppcre:scan "/201[0-9]/" x)
+             *page-walker-terminator* x))
+        (recur prev))))
+
+
+
+Here we start by fetching Planet.Lisp.org, select all the hyperlinks that are
+immediate children of paragraphs being immediate children of the <div> element
+with identifier ‘content’, and consider the target of each such link.  This
+selects a single link, namely the link to archive (the rest have some extra
+element around the paragraph).  Now we process the page behind the archive
+link, which is the current month's post list.  In this walker instance, we
+declare the RECUR function as a recursive call to the same walking process but
+for a different page.  We start by finding and saving the link to the previous
+month using a CSS selector and an attribute reference.  We use PAGE-WALK-EACH
+(somewhat similar to PROGN) to process the links for the current month, then
+possibly look at the previous one.  For the first task, we start another
+nested walk just to serve as a container separating link extraction and
+recursion.  We use :KEEP-BRANCHER T parameter to request that the internal
+walking-state data structure is passed as the result instead of a list of
+results.  This allows the early cancellation propagate to the outer walk;
+otherwise the inner walk could stop early and return some list, and the outer
+walk would continue if the list is not empty.  We look at all the links
+immediately inside list items (these are the links to the articles we want to
+extract).  To simulate the check for ‘‘previously seen’’ links, we check that
+the URL does not mention any year before 2020 and stop if it does.  In the end
+we go to the previous month using the saved URL.  The clause just does this
+unconditionally, but at some point the link extraction will find a link with
+/2019/ in the URL and stop the entire process, in particular preventing this
+recursive call from being reached.
+
+The last part of the Thoughtful Theridion functionality described in the
+current paper is the extraction of main content of a page, also called
+boilerplate removal.  The approach is roughly based on the Readbility library.
+A block of text is expected to be inside the main text if it is long and, more
+importantly, contains a lot of punctuation.  It is also unlikely to be have
+e.g. ‘‘banner’’ or ‘‘comments’’ among its HTML classes; at the same time,
+‘‘main-article’’ class in the HTML code is a positive sign.  This does not yet
+work as well as the full Readability set of heuristics, but often turns out to
+be useful.  Still, in the current state it can only be used with a fallback of
+processing the entire page.
+
+
+
+Observations from practical use
+
+In this section we make some observations based on various workflows including
+Thoughtful Theridion.  There are two main workflows; using Thoughtful
+Theridion to prepare a plain text version of a web page to read in a text
+editor, and automatic tracking and download of new content on various web
+sites.  In the latter case the content is also typically viewed in a plain
+text form produced by Thoughtful Theridion.
+
+A global observation is that it is still feasible (and comfortable for the
+author but personal preferences vary) to read most of the online texts through
+conversion to plain text.  Moreover, there are some sites known for
+resource-heavy or privacy-invasive scripts, where turning off scripts in a GUI
+browser makes the site unusable, but turning off both scripts and styles — or
+converting the HTML without scripts to plain text — allows comfortable use.
+Unlike GUI browsers, even without extraction of the main page content the
+different parts of the layout cannot overlap, thus many annoyances like
+in-page pop-ups disappear even without special measures.
+
+A more specific observation about writing the page crawling code for update
+retrieval is that there is a small number of widely used web site engines or
+web page generators (e.g. Wordpress) following some coherent logic to permit
+easy theming.  The web sites not using any popular tooling are likely to have
+simple hand-written layout.  This helps writing the crawler code, as the code
+for popular generators and engines might get more complicated but can be
+reused easily, and the code for hand-written layouts is simple by virtue of
+the layout being simple.  In both cases the authors apparently prefer to keep
+the look of the site stable and recognisable, leading to big layout changes
+being rare, so the maintenance effort for the crawler code stays low.
+
+Workflows based on viewing a text representation of HTML documents naturally
+supports archiving of the documents viewed.  Support for searching locally
+among the things read during some time period turned out to be quite
+convenient in some situations.
+
+
+
+Future work
+
+
+A possible future direction could be implementing some limited support for
+JavaScript execution with user-specified policy restricting or manipulating
+the script activity.  Unfortunately, unlike the case with the basic HTML
+markup, the expected level of functionality in this area is very large, and
+also a fast-moving target.  However, there is some hope that a restricted
+subset could still provide some value.
+
