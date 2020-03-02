@@ -35,13 +35,15 @@
                   (unless skip-extract-main-content
                     (cl-ppcre:regex-replace-all
                       " *\\n *\\n"
-                      (html-extract-main-content 
-                        (parsed-content f)
-                        (or html-content-score-protocol
-                            (make-instance 'html-classname-score-protocol))
-                        (or 
-                          html-textifier-protocol
-                          (make-instance 'html-textifier-protocol-formatting-inspector)))
+                      (let ((*base-url* (current-url f)))
+                        (html-extract-main-content 
+                          (parsed-content f)
+                          (or html-content-score-protocol
+                              (make-instance 'html-classname-score-protocol))
+                          (or 
+                            html-textifier-protocol
+                            (make-instance
+                              'html-textifier-protocol-formatting-inspector))))
                       (coerce (list #\Newline #\Newline) 'string))))
                 "")
               (when (and (not skip-forms) (parsed-content f))
