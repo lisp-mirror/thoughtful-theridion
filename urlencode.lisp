@@ -33,6 +33,9 @@
                        collect code)
                  '(vector (unsigned-byte 8)))))))
 
+(defmethod urldecode ((object puri:uri) encoding)
+  (urldecode (format nil "~a" object) encoding))
+
 (defparameter *base16-digits*
   (map 'vector 'char-code "0123456789ABCDEF"))
 
