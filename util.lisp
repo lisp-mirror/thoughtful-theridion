@@ -32,7 +32,11 @@
                 "")
               (or
                 (ignore-errors
-                  (unless skip-extract-main-content
+                  (unless 
+                    (or
+                      skip-extract-main-content
+                      (> (length (current-content f)) 1048576)
+                      )
                     (cl-ppcre:regex-replace-all
                       " *\\n *\\n"
                       (let ((*base-url* (current-url f)))

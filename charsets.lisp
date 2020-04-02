@@ -33,8 +33,11 @@
   (cond
     ((typep data '(array (unsigned-byte 8)))
      (html-meta-encoding (babel:octets-to-string data :encoding :latin-1)))
+    ; Do not try to parse a huge file which might not even be HTML
     ((typep data 'string)
-     (html-meta-encoding (html5-parser:parse-html5 data)))
+     (html-meta-encoding 
+       (html5-parser:parse-html5 
+         (subseq data 0 (min 65536 (length data))))))
     (t
       (ignore-errors
         (content-type-encoding
