@@ -35,6 +35,14 @@
                :initform (lambda (&key url) (declare (ignorable url))
                            *default-user-agent*)
                :initarg :user-agent)
+   (url-preprocessing-policy :accessor url-preprocessing-policy
+                             :initform (lambda (&key url) url)
+                             :initarg :url-preprocessing-policy)
+   (url-encoder-policy :accessor url-encoder-policy
+                       :initform (lambda (url encoding)
+                                   (declare (ignore encoding))
+                                   (urlencode-unsafe url :utf8))
+                       :initarg :url-encoder-policy)
    (decode-bytes-policy :accessor decode-bytes-policy
                         :initform (lambda (&key content content-type
                                                 url headers)
@@ -62,7 +70,7 @@
                         (ignore-errors (cl-json:decode-json-from-string
                                          content)))
                        (t (format *trace-output*
-                                  "Unrecongnised content-type: ~a~%"
+                                  "Unrecognised content-type: ~a~%"
                                   content-type)
                           (let* ((document (html5-parser:make-document))
                                  (pre (html5-parser:make-element document "pre" nil))
@@ -113,29 +121,33 @@
       reply-stream reply-stream-needs-closing-p
       status-line)
     (handler-case
-      (apply 'drakma:http-request url
-           (append
-             (let* ((additional-headers
-                      (getf drakma-args :additional-headers)))
+      (apply 'drakma:http-request
+             (funcall (url-preprocessing-policy fetcher)
+                      :url url :allow-other-keys t)
+             (append
+               (let* ((additional-headers
+                        (getf drakma-args :additional-headers)))
+                 (list
+                   :additional-headers
+                   (append
+                     additional-headers
+                     (unless (assoc "Referer" additional-headers :test 'equalp)
+                       `(("Referer" . ,(funcall (referer-policy fetcher)
+                                                :old (current-url fetcher)
+                                                :new url
+                                                :allow-other-keys t)))))))
+               drakma-args
+               (when (url-encoder-policy fetcher)
+                 (list :url-encoder (url-encoder-policy fetcher)))
                (list
-               :additional-headers
-               (append
-                 additional-headers
-                 (unless (assoc "Referer" additional-headers :test 'equalp)
-                   `(("Referer" . ,(funcall (referer-policy fetcher)
-                                            :old (current-url fetcher)
-                                            :new url
-                                            :allow-other-keys t)))))))
-             drakma-args
-             (list
-               :cookie-jar (cookie-jar fetcher)
-               :user-agent (funcall (user-agent fetcher)
-                                    :allow-other-keys t
-                                    :url url)
-               :proxy (proxy fetcher)
-               :redirect nil
-               :force-binary t
-               )))
+                 :cookie-jar (cookie-jar fetcher)
+                 :user-agent (funcall (user-agent fetcher)
+                                      :allow-other-keys t
+                                      :url url)
+                 :proxy (proxy fetcher)
+                 :redirect nil
+                 :force-binary t
+                 )))
       (error (e)
              (values
                (babel:string-to-octets (format nil "~a" e) :encoding :utf-8)
