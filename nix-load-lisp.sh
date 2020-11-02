@@ -13,12 +13,12 @@ test -n "$THOUGHTFUL_THERIDION_NIX_GC_PIN" && {
 }
 
 for i in $dependencies; do
-        source "$(nix-build --no-out-link '<nixpkgs>' -A lispPackages.$i)"/lib/common-lisp-settings/*-path-config.sh
+        . "$(nix-build --no-out-link '<nixpkgs>' -A lispPackages.$i)"/lib/common-lisp-settings/*-path-config.sh
 done
 
 export ASDF_OUTPUT_TRANSLATIONS=/nix/store:/nix/store
 
-if test -n "$NO_RLWRAP"; then WRAP=sh; else
+if test -n "$NO_RLWRAP"; then WRAP=bash; else
         WRAP="$(nix-build --no-out-link '<nixpkgs>' -A rlwrap)"/bin/rlwrap;
 fi
 
