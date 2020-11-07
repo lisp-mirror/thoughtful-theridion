@@ -222,6 +222,11 @@
 
 (defmethod html-element-to-text-dispatch
   ((protocol show-formatting-mixin)
+   (type (eql :element)) (tag (eql :strike)) element)
+  (format nil "{-- ~a --}" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol show-formatting-mixin)
    (type (eql :element)) (tag (eql :i)) element)
   (format nil "{// ~a //}" (call-next-method)))
 
