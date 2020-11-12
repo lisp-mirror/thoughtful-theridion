@@ -15,7 +15,7 @@ if ! echo "$url" | grep -E '^[a-z]+:' > /dev/null; then
 fi
 
 echo "$url" > "$target/$basename.url"
-curl -L "$url" > "$target/$basename.html"
+curl --user-agent 'thoughtful theridion' -L "$url" > "$target/$basename.html"
 ./dump-html.sh "$url" < "$target/$basename.html" > "$target/$basename.html.txt"
 
 shift; shift
