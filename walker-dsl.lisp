@@ -153,6 +153,7 @@
 (defmacro page-walk ((var value &key
                           (recurse nil)
                           (recur nil)
+                          (recursion-check-uniqueness nil)
                           (fetcher '(make-instance 'http-fetcher))
                           (fetcher-var (gensym))
                           (fetch t)
@@ -162,6 +163,7 @@
                      &environment env)
   (assert (not (and recur recurse)))
   (let* ((recur (or recur recurse))
+         (uniqueness-ht (gensym))
          (top-wrapper (if fetch
                         `(let* ((,fetcher-var ,fetcher)
                                 (*base-url* ,var)
@@ -214,8 +216,17 @@
                         (,descend ,result-var))))))))
          (main-wrapped (append top-wrapper (list main-body)))
          (full-computation
-           (if recur `(labels ((,recur (,var) ,main-wrapped))
-                          (,recur ,var))
+           (if recur 
+             `(let ,(if recursion-check-uniqueness
+                      `((,uniqueness-ht (make-hash-table :test 'equal))))
+                (labels ((,recur (,var)
+                                 ,(when recursion-check-uniqueness
+                                    `(progn
+                                       (when (gethash ,var ,uniqueness-ht)
+                                         (return-from ,recur nil))
+                                       (setf (gethash ,var ,uniqueness-ht) t)))
+                                 ,main-wrapped))
+                  (,recur ,var)))
              main-wrapped))
          (full-computation-wrapped `(let ((,var ,value))
                                       (declare (ignorable ,var))
