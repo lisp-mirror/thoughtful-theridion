@@ -20,8 +20,8 @@
       (format out "~a~%" (current-content f)))
     (with-open-file (out (format nil "~a/~a.html.txt" target basename)
                          :direction :output)
-      (format out "→[ ~a ]~%→[ ~a ]~%~a~%~a~%~{~%(~{~s~%~})~%~%~}~{~S~%#.~S~%~}~%~a~%"
-              url (current-url f)
+      (format out "→[ ~a ]~%→[ ~a ]~%→[ ~a ]~%~a~%~a~%~{~%(~{~s~%~})~%~%~}~{~S~%#.~S~%~}~%~a~%"
+              url (current-url f) (current-decoded-url f)
               (or
                 (ignore-errors
                   (html-element-to-text

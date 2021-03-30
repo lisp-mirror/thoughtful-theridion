@@ -2,7 +2,7 @@
 
 cd "$(dirname "$0")"
 
-NO_RLWRAP=1 ./nix-load-lisp.sh --eval '
+NO_RLWRAP=1 ./nix-load-lisp.sh --non-interactive --eval '
 (progn
   (setf cffi:*foreign-library-directories*
         (cffi::explode-path-environment-variable

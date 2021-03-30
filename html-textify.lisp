@@ -155,13 +155,28 @@
          (urls (loop for a in attributes
                      for v := (html5-parser:element-attribute element a)
                      when v collect (real-url v)))
-         (urls (loop for u in urls
-                     for du := (ignore-errors (urldecode u :utf-8))
-                     collect u
-                     when (and du (not (equal u du)))
-                     collect du))
+         (seen-urls (make-hash-table :test 'equal))
+         (uniq-urls nil)
          (text (call-next-method)))
-    (if urls (format nil "{ ~a }~{→[ ~a ]~}" text urls) text)))
+    (loop with stack := urls
+          while stack
+          for u := (pop stack)
+          when u
+          unless (gethash u seen-urls)
+          do 
+          (progn 
+            (setf (gethash u seen-urls) t)
+            (push u uniq-urls)
+            (push (ignore-errors (urldecode u :utf-8)) stack)
+            (loop with query-params := (second (cl-ppcre:split "[?]" u))
+                  with params := (cl-ppcre:split "[&]" u)
+                  for p in params
+                  for v := (second (cl-ppcre:split "[=]" p))
+                  for dv := (ignore-errors (urldecode v :utf-8))
+                  when dv
+                  when (cl-ppcre:scan "^https?://" dv)
+                  do (push dv stack))))
+    (if urls (format nil "{ ~a }~{→[ ~a ]~}" text (reverse uniq-urls)) text)))
 
 (defmethod html-element-to-text-dispatch
   ((protocol show-urls-mixin) (type (eql :element)) (tag (eql :meta)) element)

@@ -7,6 +7,7 @@
              (urldecode object nil)
              :encoding
              (gethash (string encoding) *babel-encodings* :utf-8)))
+  (:method ((object null) encoding) nil)
   (:method ((object string) encoding)
            (urldecode
              (babel:string-to-octets
@@ -35,6 +36,12 @@
 
 (defmethod urldecode ((object puri:uri) encoding)
   (urldecode (format nil "~a" object) encoding))
+
+(defmethod maybe-urldecode (object encodings)
+  (loop for e in encodings
+        for d := (ignore-errors (urldecode object e))
+        when d return d
+        finally (return object)))
 
 (defparameter *base16-digits*
   (map 'vector 'char-code "0123456789ABCDEF"))

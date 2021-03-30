@@ -8,6 +8,7 @@
                :initform (make-instance 'drakma:cookie-jar))
    (pending-redirect :accessor pending-redirect :initform nil)
    (current-url :accessor current-url :initform nil)
+   (current-decoded-url :accessor current-decoded-url :initform nil)
    (current-intended-url :accessor current-intended-url :initform nil)
    (current-status-code :accessor current-status-code :initform nil)
    (current-status-line :accessor current-status-line :initform nil)
@@ -35,6 +36,10 @@
                :initform (lambda (&key url) (declare (ignorable url))
                            *default-user-agent*)
                :initarg :user-agent)
+   (headers-policy :accessor headers-policy
+                   :initform (lambda (&key)
+                               `(("Cache-Control" . "none")))
+                   :initarg :headers-policy)
    (url-preprocessing-policy :accessor url-preprocessing-policy
                              :initform (lambda (&key url) url)
                              :initarg :url-preprocessing-policy)
@@ -111,9 +116,9 @@
 (defmethod navigate ((fetcher http-fetcher) (url string) &rest drakma-args)
   (when (and (not (cl-ppcre:scan "^[a-z]+:" (string-downcase url)))
              (cl-ppcre:scan "^[a-z]+[%]3a" (string-downcase url)))
-    (setf url (urldecode url :latin-1)))
+    (setf url (urldecode url :utf-8)))
   (setf url (cl-ppcre:regex-replace "#.*" url ""))
-  (setf url (urlencode-unsafe url :utf-8))
+  (setf url (funcall (url-encoder-policy fetcher) url :utf-8))
   (multiple-value-bind
     (content
       status-code server-headers
@@ -131,6 +136,10 @@
                    :additional-headers
                    (append
                      additional-headers
+                     (funcall (or (headers-policy fetcher) (constantly nil))
+                              :fetcher fetcher :new url :old (current-url fetcher)
+                              :url url
+                              :allow-other-keys t)
                      (unless (assoc "Referer" additional-headers :test 'equalp)
                        `(("Referer" . ,(funcall (referer-policy fetcher)
                                                 :old (current-url fetcher)
@@ -140,6 +149,7 @@
                (when (url-encoder-policy fetcher)
                  (list :url-encoder (url-encoder-policy fetcher)))
                (list
+                 :preserve-uri t
                  :cookie-jar (cookie-jar fetcher)
                  :user-agent (funcall (user-agent fetcher)
                                       :allow-other-keys t
@@ -162,7 +172,8 @@
       (current-content-bytes fetcher) content
       (current-status-code fetcher) status-code
       (current-status-line fetcher) status-line
-      (current-url fetcher) reply-url
+      (current-url fetcher) (urlencode-unsafe (puri:render-uri reply-url nil) :latin-1)
+      (current-decoded-url fetcher) (maybe-urldecode (current-url fetcher) (list :utf-8 :latin-1))
       (current-intended-url fetcher) url
       (current-headers fetcher) server-headers
       )
