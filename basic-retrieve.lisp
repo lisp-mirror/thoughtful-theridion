@@ -172,7 +172,7 @@
       (current-content-bytes fetcher) content
       (current-status-code fetcher) status-code
       (current-status-line fetcher) status-line
-      (current-url fetcher) (urlencode-unsafe (puri:render-uri reply-url nil) :latin-1)
+      (current-url fetcher) (and reply-url (urlencode-unsafe (puri:render-uri reply-url nil) :latin-1))
       (current-decoded-url fetcher) (maybe-urldecode (current-url fetcher) (list :utf-8 :latin-1))
       (current-intended-url fetcher) url
       (current-headers fetcher) server-headers
