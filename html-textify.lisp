@@ -168,6 +168,17 @@
             (setf (gethash u seen-urls) t)
             (push u uniq-urls)
             (push (ignore-errors (urldecode u :utf-8)) stack)
+            (when (cl-ppcre:scan ".+[/?&=]https?:[/][/]" u)
+              (push (cl-ppcre:regex-replace-all
+                      "^.+[/?&=](https?:[/][/])" u "\\1")
+                    stack))
+            (when (cl-ppcre:scan "^https://([^/]+[.])?twitter.com/" u)
+              (push (cl-ppcre:regex-replace
+                      "/([^/]+[.])?twitter.com/" u "/twitit.gq/")
+                    stack))
+            (when (cl-ppcre:scan "^https://[^/]+/[^/]+/status/[0-9]+($|#)" u)
+              (push (cl-ppcre:regex-replace "^https://[^/]+/" u "https://twitter.com/") 
+                    stack))
             (loop with query-params := (second (cl-ppcre:split "[?]" u))
                   with params := (cl-ppcre:split "[&]" u)
                   for p in params
