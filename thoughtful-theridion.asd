@@ -15,7 +15,7 @@
                        :css-selectors
                        :css-selectors-simple-tree
                        :cl-ppcre :cl-unicode
-                       :parenscript)
+                       :parenscript :quri)
   
   :components
   ((:file "package")

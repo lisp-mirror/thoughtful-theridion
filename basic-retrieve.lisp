@@ -52,9 +52,21 @@
                         :initform (lambda (&key content content-type
                                                 url headers)
                                     (declare (ignorable url headers))
-                                    (let* ((decompressed (ignore-errors
-                                                           (chipz:decompress
-                                                             nil 'chipz:gzip content))))
+                                    (let* ((vector-content
+                                             (map
+                                               '(vector (unsigned-byte 8))
+                                               'identity
+                                               content))
+                                           (compressors
+                                             (list 'chipz:gzip 'chipz:deflate
+                                                   'chipz:zlib 'chipz:bzip2))
+                                           (decompressed 
+                                             (loop for c in compressors
+                                                   for d :=
+                                                   (ignore-errors
+                                                     (chipz:decompress 
+                                                       nil c vector-content))
+                                                   when d return d)))
                                       (decode-guessed-encoding
                                         :content (or decompressed content)
                                         :content-type content-type)))
@@ -118,6 +130,19 @@
              (cl-ppcre:scan "^[a-z]+[%]3a" (string-downcase url)))
     (setf url (urldecode url :utf-8)))
   (setf url (cl-ppcre:regex-replace "#.*" url ""))
+  (when (and 
+          (getf drakma-args :parameters)
+          (eq :get (or (getf drakma-args :method) :get)))
+    (setf url (cl-ppcre:regex-replace "[?].*" url ""))
+    (setf url (format nil "~a?~{~a=~a~#[~:;&~]~}"
+                      url
+                      (loop for p in (getf drakma-args :parameters)
+                            when p
+                            collect
+                            (quri:url-encode (or (car p) ""))
+                            collect
+                            (quri:url-encode (or (cdr p) ""))
+                            ))))
   (setf url (funcall (url-encoder-policy fetcher) url :utf-8))
   (multiple-value-bind
     (content
