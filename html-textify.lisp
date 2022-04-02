@@ -155,6 +155,18 @@
          (urls (loop for a in attributes
                      for v := (html5-parser:element-attribute element a)
                      when v collect (real-url v)))
+         (style (or (html5-parser:element-attribute element "style") ""))
+         (style-parts (cl-ppcre:split ";" style))
+         (bg-images (loop for p in style-parts
+                          when (cl-ppcre:scan 
+                                 "^ *background-image: *url[(].*[)]" p)
+                          collect
+                          (cl-ppcre:regex-replace
+                            "^ *background-image: *url[(](['\"]?)(.*)\\1[)]"
+                            p
+                            "\\2"
+                            )))
+         (urls (append urls bg-images))
          (seen-urls (make-hash-table :test 'equal))
          (uniq-urls nil)
          (text (call-next-method)))
