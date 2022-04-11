@@ -186,10 +186,10 @@
                     stack))
             (when (cl-ppcre:scan "^https://([^/]+[.])?twitter.com/" u)
               (push (cl-ppcre:regex-replace
-                      "/([^/]+[.])?twitter.com/" u "/twitit.gq/")
+                      "/([^/]+[.])?twitter.com/" u "/twiiit.com/")
                     stack)
               (push (cl-ppcre:regex-replace
-                      "/([^/]+[.])?twitter.com/" u "/twiiit.com/")
+                      "/([^/]+[.])?twitter.com/" u "/farside.link/nitter/")
                     stack)
               )
             (when (cl-ppcre:scan "^https://[^/]+/[^/]+/status/[0-9]+($|#)" u)

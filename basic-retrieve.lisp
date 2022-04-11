@@ -28,6 +28,10 @@
                       (declare (ignorable code header old new))
                       nil)
                     :initarg :redirect-policy)
+   (timeout-policy :accessor timeout-policy
+                   :initarg :timeout-policy
+                   :initform
+                   (lambda (&key url) (declare (ignorable url)) 0))
    (basic-auth-policy :accessor basic-auth-policy
                       :initform (lambda (&key url)
                                   (declare (ignorable url)) nil)
@@ -86,6 +90,8 @@
                                        content-type)
                         (ignore-errors (cl-json:decode-json-from-string
                                          content)))
+                       ((cl-ppcre:scan "^text/plain(;|$)" content-type)
+                        content)
                        (t (format *trace-output*
                                   "Unrecognised content-type: ~a~%"
                                   content-type)
@@ -151,45 +157,56 @@
       reply-stream reply-stream-needs-closing-p
       status-line)
     (handler-case
-      (apply 'drakma:http-request
-             (funcall (url-preprocessing-policy fetcher)
-                      :url url :allow-other-keys t)
-             (append
-               (let* ((additional-headers
-                        (getf drakma-args :additional-headers)))
+      (bordeaux-threads:with-timeout
+        ((funcall (timeout-policy fetcher)
+                  :url url :allow-other-keys t))
+        (apply 'drakma:http-request
+               (funcall (url-preprocessing-policy fetcher)
+                        :url url :allow-other-keys t)
+               (append
+                 (let* ((additional-headers
+                          (getf drakma-args :additional-headers)))
+                   (list
+                     :additional-headers
+                     (append
+                       additional-headers
+                       (funcall (or (headers-policy fetcher) (constantly nil))
+                                :fetcher fetcher :new url :old (current-url fetcher)
+                                :url url
+                                :allow-other-keys t)
+                       (unless (assoc "Referer" additional-headers :test 'equalp)
+                         `(("Referer" . ,(funcall (referer-policy fetcher)
+                                                  :old (current-url fetcher)
+                                                  :new url
+                                                  :allow-other-keys t)))))))
+                 drakma-args
+                 (when (url-encoder-policy fetcher)
+                   (list :url-encoder (url-encoder-policy fetcher)))
                  (list
-                   :additional-headers
-                   (append
-                     additional-headers
-                     (funcall (or (headers-policy fetcher) (constantly nil))
-                              :fetcher fetcher :new url :old (current-url fetcher)
-                              :url url
-                              :allow-other-keys t)
-                     (unless (assoc "Referer" additional-headers :test 'equalp)
-                       `(("Referer" . ,(funcall (referer-policy fetcher)
-                                                :old (current-url fetcher)
-                                                :new url
-                                                :allow-other-keys t)))))))
-               drakma-args
-               (when (url-encoder-policy fetcher)
-                 (list :url-encoder (url-encoder-policy fetcher)))
-               (list
-                 :preserve-uri t
-                 :cookie-jar (cookie-jar fetcher)
-                 :user-agent (funcall (user-agent fetcher)
-                                      :allow-other-keys t
-                                      :url url)
-                 :proxy (proxy fetcher)
-                 :redirect nil
-                 :force-binary t
-                 )))
+                   :preserve-uri t
+                   :cookie-jar (cookie-jar fetcher)
+                   :user-agent (funcall (user-agent fetcher)
+                                        :allow-other-keys t
+                                        :url url)
+                   :proxy (proxy fetcher)
+                   :redirect nil
+                   :force-binary t
+                   ))))
       (error (e)
              (values
                (babel:string-to-octets (format nil "~a" e) :encoding :utf-8)
                503
                `((:content-type . "text/plain; charset=utf-8"))
                nil nil nil
-               "Fetching failed")))
+               "Fetching failed"))
+      (bordeaux-threads:timeout (e)
+             (values
+               (babel:string-to-octets (format nil "~a" e) :encoding :utf-8)
+               504
+               `((:content-type . "text/plain; charset=utf-8"))
+               nil nil nil
+               "Fetching failed: timeout"))
+      )
     (when reply-stream-needs-closing-p (close reply-stream))
     (when (getf drakma-args :cookie-jar)
       (setf (cookie-jar fetcher) (getf drakma-args :cookie-jar)))

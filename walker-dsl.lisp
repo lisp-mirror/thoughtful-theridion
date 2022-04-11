@@ -154,7 +154,10 @@
                           (recurse nil)
                           (recur nil)
                           (recursion-check-uniqueness nil)
-                          (fetcher '(make-instance 'http-fetcher))
+                          (timeout 180)
+                          (fetcher `(make-instance 'http-fetcher
+                                                   :timeout-policy
+                                                   (lambda (&key) ,timeout)))
                           (fetcher-var (gensym))
                           (fetch t)
                           (use-fetcher nil)
