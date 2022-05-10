@@ -81,7 +81,7 @@
                               ((char<= #\a x #\z) (list x))
                               ((char<= #\A x #\Z) (list x))
                               ((char<= #\0 x #\9) (list x))
-                              ((position x ":/?&_-.=*,;[]%+~") (list x))
+                              ((position x ":/?&_-.=*,;[]%+~@") (list x))
                               (t (coerce (urlencode (string x) encoding) 'list))))
                           object))
              'string)))
