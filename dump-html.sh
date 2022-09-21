@@ -11,7 +11,13 @@ cd "$(dirname "$0")"
 (setf (thoughtful-theridion:current-content-bytes fetcher) buffer
       (thoughtful-theridion:current-headers fetcher) (quote ((:content-type . \"text/html\")))
       (thoughtful-theridion:current-url fetcher) \"$1\"
-      (thoughtful-theridion:current-status-code fetcher) 200)
+      (thoughtful-theridion:current-status-code fetcher) 200
+      (thoughtful-theridion::decode-bytes-policy fetcher) 
+      (lambda (&key content) 
+         (thoughtful-theridion::decode-guessed-encoding 
+            :content (map '(vector (unsigned-byte 8)) 'identity content) 
+            :content-type \"text/html\"))
+)
 (thoughtful-theridion:parse-obtained-content fetcher)
 (princ 
   (or (ignore-errors
