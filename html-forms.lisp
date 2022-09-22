@@ -74,7 +74,7 @@
            (loop for e in base-entries
                  for n := (car e)
                  for k := (gethash n name-ht 0)
-                 collect e
+                 when e collect e
                  when (> k 1) collect
                  (cons (format nil "~a[]" (car e)) (cdr e)))
            names-list)))))
