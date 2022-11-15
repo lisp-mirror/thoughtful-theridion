@@ -4,7 +4,9 @@
                           fetcher fetcher-parameters
                           drakma-args html-textifier-protocol
                           html-content-score-protocol
-                          skip-extract-main-content skip-cookies skip-forms)
+                          skip-extract-main-content skip-cookies skip-forms
+                          referrer
+                          )
   (ensure-directories-exist (format nil "~a/" target))
   (let* ((f (or fetcher
                 (apply 'make-instance 'http-fetcher fetcher-parameters)))
@@ -14,7 +16,7 @@
       (apply 'navigate f url drakma-args))
     (with-open-file (out (format nil "~a/~a.url" target basename)
                          :direction :output)
-      (format out "~a~%~a~%" url (current-url f)))
+      (format out "~a~%~a~%~a~%" url (current-url f) referrer))
     (with-open-file (out (format nil "~a/~a.html" target basename)
                          :direction :output)
       (format out "~a~%" (current-content f)))

@@ -17,7 +17,7 @@ fi
 url="${url//\"/%22}"
 url="${url//\\/%5c}"
 
-./thoughtful-theridion.bin --non-interactive --eval "(thoughtful-theridion::save-web-page \"$url\" \"$target\" \"$basename\" $2)" >&2
+./thoughtful-theridion.bin --non-interactive --eval "(thoughtful-theridion::save-web-page \"$url\" \"$target\" \"$basename\" $2 :referrer \"${WEB_PAGE_REFERRER//"/\\"}\")" >&2
 
 shift; shift
 
