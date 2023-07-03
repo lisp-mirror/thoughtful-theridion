@@ -70,7 +70,13 @@
                                                    (ignore-errors
                                                      (chipz:decompress 
                                                        nil c vector-content))
-                                                   when d return d)))
+                                                   when
+                                                   (and d
+                                                        (or
+                                                          (find 0 vector-content)
+                                                          (not (find 0 d))
+                                                          ))
+                                                   return d)))
                                       (decode-guessed-encoding
                                         :content (or decompressed content)
                                         :content-type content-type)))

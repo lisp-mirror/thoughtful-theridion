@@ -135,12 +135,12 @@ as readable content in case this element is picked as a part of main content.
   (def-html-score-content (:comment (nil)) (values 0 () "" nil))
   (def-html-score-content (:document-type (nil)) (values 0 () "" nil))
   (def-html-score-content (:text (nil))
-    (let* ((text (html5-parser:node-value element)
-                 (cl-ppcre:regex-replace-all
-                   (if *whitespace-list*
-                     (format nil "[~{~a~}]+" *whitespace-list*) " ")
-                   (html5-parser:node-value element)
-                   " "))
+    (let* ((text 
+             (cl-ppcre:regex-replace-all
+               (if *whitespace-list*
+                 (format nil "[~{~a~}]+" *whitespace-list*) " ")
+               (html5-parser:node-value element)
+               " "))
            (score (html-score-text protocol text)))
       (values score (list) text element)))
   (def-html-score-content (:document (nil)) (call-next-method))
