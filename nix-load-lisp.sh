@@ -7,7 +7,7 @@ export CL_SOURCE_REGISTRY="$(realpath "$(dirname "$0")"):$PWD${CL_SOURCE_REGISTR
 dependencies="drakma dexador puri quri cl_plus_ssl cl-html5-parser parenscript cl-ppcre cl-json css-selectors css-selectors-simple-tree babel cl-unicode bordeaux-threads $THOUGHTFUL_THERIDION_EXTRA_DEPENDENCIES"
 
 drv="$(nix-instantiate -E "with import <nixpkgs> {}; sbcl.withPackages (ps: with ps; [ $dependencies ] )" --add-root "$THOUGHTFUL_THERIDION_NIX_GC_PIN_DRV")"
-test -n "$THOUGHTFUL_THERIDION_NIX_GC_PIN" && nix-store -r "$drv" -o "$THOUGHTFUL_THERIDION_NIX_GC_PIN"
+test -n "$THOUGHTFUL_THERIDION_NIX_GC_PIN" && nix-store -r "$drv" --add-root "$THOUGHTFUL_THERIDION_NIX_GC_PIN"
 path="$(nix-store -r "$drv")"
 
 if test -n "$NO_RLWRAP"; then WRAP=env; else

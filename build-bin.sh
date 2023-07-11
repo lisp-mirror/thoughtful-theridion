@@ -6,11 +6,11 @@ NO_RLWRAP=1 ./nix-load-lisp.sh --non-interactive --eval '
 (progn
   (setf cffi:*foreign-library-directories*
         (cffi::explode-path-environment-variable
-          "NIX_LISP_LD_LIBRARY_PATH"))
+          "LD_LIBRARY_PATH"))
   (loop
     with libpath :=
     (uiop:split-string
-      (uiop:getenv "NIX_LISP_LD_LIBRARY_PATH")
+      (uiop:getenv "LD_LIBRARY_PATH")
       :separator ":")
     for l in sb-alien::*shared-objects*
     for ns := (sb-alien::shared-object-namestring l)
