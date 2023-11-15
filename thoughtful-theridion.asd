@@ -16,7 +16,8 @@
                        :css-selectors-simple-tree
                        :cl-ppcre :cl-unicode
                        :parenscript :quri
-                       :bordeaux-threads)
+                       :bordeaux-threads
+                       :uiop)
   
   :components
   ((:file "package")
@@ -26,6 +27,7 @@
    (:file "basic-retrieve" :depends-on ("package" "charsets" "urlencode"
                                         "date-parsing-experiments"))
    (:file "html-textify" :depends-on ("basic-retrieve"))
+   (:file "curl-command" :depends-on ("basic-retrieve"))
    (:file "html-forms" :depends-on ("package"))
    (:file "html-main-text" :depends-on ("package" "html-textify"))
    (:file "util" :depends-on ("basic-retrieve" "html-textify" "html-main-text"))

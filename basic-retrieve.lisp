@@ -5,6 +5,7 @@
 
 (defclass http-fetcher ()
   ((cookie-jar :accessor cookie-jar
+               :initarg :cookie-jar
                :initform (make-instance 'drakma:cookie-jar))
    (pending-redirect :accessor pending-redirect :initform nil)
    (current-url :accessor current-url :initform nil)
@@ -36,10 +37,10 @@
                       :initform (lambda (&key url)
                                   (declare (ignorable url)) nil)
                       :initarg :basic-auth-policy)
-   (user-agent-policy :accessor user-agent
+   (user-agent-policy :accessor user-agent-policy
                :initform (lambda (&key url) (declare (ignorable url))
                            *default-user-agent*)
-               :initarg :user-agent)
+               :initarg :user-agent-policy)
    (headers-policy :accessor headers-policy
                    :initform (lambda (&key)
                                `(("Cache-Control" . "none")))
@@ -191,7 +192,7 @@
                  (list
                    :preserve-uri t
                    :cookie-jar (cookie-jar fetcher)
-                   :user-agent (funcall (user-agent fetcher)
+                   :user-agent (funcall (user-agent-policy fetcher)
                                         :allow-other-keys t
                                         :url url)
                    :proxy (proxy fetcher)
