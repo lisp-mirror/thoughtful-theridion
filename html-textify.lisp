@@ -248,7 +248,7 @@
 
 (defmethod html-element-to-text-dispatch
   ((protocol show-id-texts-mixin) (type (eql :element)) tag element)
-  (let* ((attributes '("name" "id"))
+  (let* ((attributes '("name" "id" "datetime"))
          (names (loop for a in attributes
                      for v := (html5-parser:element-attribute element a)
                      when v collect v))

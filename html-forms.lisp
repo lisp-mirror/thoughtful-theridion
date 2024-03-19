@@ -118,9 +118,10 @@
                             (drakma-args nil))
   (let* ((document (parsed-content fetcher))
          (form (or chosen-form (select-form document form-selector)))
-         (url (format nil "~a" (current-url fetcher)))
+         (url (format nil "~a" 
+                      (or (current-url fetcher) *base-url*)))
          (parameters (form-parameters
                        form :assignments assignments
-                       :url (or url *base-url*)
+                       :url url
                        :drakma-args drakma-args)))
     (apply 'navigate fetcher parameters)))

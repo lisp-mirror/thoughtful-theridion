@@ -65,18 +65,17 @@
                                            (compressors
                                              (list 'chipz:gzip 'chipz:deflate
                                                    'chipz:zlib 'chipz:bzip2))
-                                           (decompressed 
+                                           (decompressed
                                              (loop for c in compressors
                                                    for d :=
                                                    (ignore-errors
-                                                     (chipz:decompress 
+                                                     (chipz:decompress
                                                        nil c vector-content))
                                                    when
                                                    (and d
                                                         (or
                                                           (find 0 vector-content)
-                                                          (not (find 0 d))
-                                                          ))
+                                                          (not (find 0 d))))
                                                    return d)))
                                       (decode-guessed-encoding
                                         :content (or decompressed content)
@@ -93,7 +92,7 @@
                         (ignore-errors (html5-parser:parse-html5 content)))
                        ((cl-ppcre:scan "^application/xhtml([+]xml)?(;|$)" content-type)
                         (ignore-errors (html5-parser:parse-html5 content)))
-                       ((cl-ppcre:scan "^(text|application)/(x-)?json(;|$)" 
+                       ((cl-ppcre:scan "^(text|application)/(x-)?json(;|$)"
                                        content-type)
                         (ignore-errors (cl-json:decode-json-from-string
                                          content)))
@@ -110,8 +109,7 @@
                             document))))
      :initarg :parsing-policy)
    (proxy :accessor proxy :initform drakma:*default-http-proxy*
-          :initarg :proxy)
-   ))
+          :initarg :proxy)))
 
 (defgeneric parse-obtained-content (fetcher))
 
@@ -143,7 +141,7 @@
              (cl-ppcre:scan "^[a-z]+[%]3a" (string-downcase url)))
     (setf url (urldecode url :utf-8)))
   (setf url (cl-ppcre:regex-replace "#.*" url ""))
-  (when (and 
+  (when (and
           (getf drakma-args :parameters)
           (eq :get (or (getf drakma-args :method) :get)))
     (setf url (cl-ppcre:regex-replace "[?].*" url ""))
@@ -154,8 +152,7 @@
                             collect
                             (quri:url-encode (or (car p) ""))
                             collect
-                            (quri:url-encode (or (cdr p) ""))
-                            ))))
+                            (quri:url-encode (or (cdr p) ""))))))
   (setf url (funcall (url-encoder-policy fetcher) url :utf-8))
   (multiple-value-bind
     (content
@@ -197,8 +194,7 @@
                                         :url url)
                    :proxy (proxy fetcher)
                    :redirect nil
-                   :force-binary t
-                   ))))
+                   :force-binary t))))
       (error (e)
              (values
                (babel:string-to-octets (format nil "~a" e) :encoding :utf-8)
@@ -212,8 +208,7 @@
                504
                `((:content-type . "text/plain; charset=utf-8"))
                nil nil nil
-               "Fetching failed: timeout"))
-      )
+               "Fetching failed: timeout")))
     (when reply-stream-needs-closing-p (close reply-stream))
     (when (getf drakma-args :cookie-jar)
       (setf (cookie-jar fetcher) (getf drakma-args :cookie-jar)))
@@ -224,8 +219,7 @@
       (current-url fetcher) (and reply-url (urlencode-unsafe (puri:render-uri reply-url nil) :latin-1))
       (current-decoded-url fetcher) (maybe-urldecode (current-url fetcher) (list :utf-8 :latin-1))
       (current-intended-url fetcher) url
-      (current-headers fetcher) server-headers
-      )
+      (current-headers fetcher) server-headers)
     (parse-obtained-content fetcher)
     (or
       (and (= status-code 401)

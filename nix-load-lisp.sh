@@ -4,7 +4,7 @@ unset $(set | grep '^_.*NIX_LISP*' | cut -d = -f 1)
 
 export CL_SOURCE_REGISTRY="$(realpath "$(dirname "$0")"):$PWD${CL_SOURCE_REGISTRY:+:}$CL_SOURCE_REGISTRY"
 
-dependencies="drakma dexador puri quri cl_plus_ssl cl-html5-parser parenscript cl-ppcre cl-json css-selectors css-selectors-simple-tree babel cl-unicode bordeaux-threads $THOUGHTFUL_THERIDION_EXTRA_DEPENDENCIES"
+dependencies="drakma dexador puri quri cl_plus_ssl cl-html5-parser parenscript cl-ppcre cl-json css-selectors css-selectors-simple-tree babel cl-unicode bordeaux-threads try clsql local-time ironclad trivial-backtrace $THOUGHTFUL_THERIDION_EXTRA_DEPENDENCIES"
 
 drv="$(nix-instantiate -E "with import <nixpkgs> {}; sbcl.withPackages (ps: with ps; [ $dependencies ] )" --add-root "$THOUGHTFUL_THERIDION_NIX_GC_PIN_DRV")"
 test -n "$THOUGHTFUL_THERIDION_NIX_GC_PIN" && nix-store -r "$drv" --add-root "$THOUGHTFUL_THERIDION_NIX_GC_PIN"
@@ -16,4 +16,4 @@ fi
 
 echo "Lisp package: $path" >&2
 
-"$WRAP" "$path"/bin/sbcl $SBCL_EARLY_OPTIONS --eval "(require :asdf)" --eval "(require :thoughtful-theridion)" "$@"
+"$WRAP" "$path"/bin/sbcl --noinform $SBCL_EARLY_OPTIONS --eval "(defparameter common-lisp-user::*argv0* \"$path/bin/sbcl\")" --eval "(require :asdf)" --eval "(asdf:load-system :thoughtful-theridion :verbose nil)" "$@"
