@@ -124,6 +124,41 @@
 
 (defmethod html-element-to-text-dispatch
   ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :h1)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :h2)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :h3)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :h4)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :h5)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :h6)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :dt)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
    (type (eql :element)) (tag (eql :li)) element)
   (format nil "~%~a~%" (call-next-method)))
 
@@ -141,6 +176,11 @@
   ((protocol html-textifier-protocol)
    (type (eql :element)) (tag (eql :tr)) element)
   (format nil "~%~a~%" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :td)) element)
+  (format nil "~a ~a" (call-next-method) #\Tab))
 
 (defmethod html-element-to-text-dispatch
   ((protocol html-textifier-protocol)
