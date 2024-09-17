@@ -56,7 +56,7 @@
                 (loop for form in (css-selectors:query
                                     "form" (parsed-content f))
                       collect (form-parameters form :fetcher f)))
-              (unless skip-cookies
+              (unless (or skip-cookies (null (cookie-jar f)))
                 (list
                   :cookie-jar
                   `(make-instance

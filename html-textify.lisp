@@ -2,23 +2,23 @@
 
 (defvar *base-url* nil)
 
-(defun real-url (url)
-  (cond ((null *base-url*) url)
-        ((equal url "") *base-url*)
+(defun real-url (url &key (base-url *base-url*))
+  (cond ((null base-url) url)
+        ((equal url "") base-url)
         ((cl-ppcre:scan "^[a-z]+:" url) url)
         ((cl-ppcre:scan "^//" url)
          (format nil "~a~a"
                  (cl-ppcre:regex-replace
-                   "(^[a-z]+:)/.*$" *base-url* "\\1")
+                   "(^[a-z]+:)/.*$" base-url "\\1")
                  url))
         ((cl-ppcre:scan "^/" url)
          (format nil "~a~a"
                  (cl-ppcre:regex-replace
-                   "(^[a-z]+:/*[^/]+)/.*$" *base-url* "\\1")
+                   "(^[a-z]+:/*[^/]+)/.*$" base-url "\\1")
                  url))
         (t (format nil "~a/~a"
                  (cl-ppcre:regex-replace
-                   "(^[a-z]+:/*[^/].*)/.*$" *base-url* "\\1")
+                   "(^[a-z]+:/*[^/].*)/.*$" base-url "\\1")
                    url))))
 
 (defclass html-textifier-protocol () ())

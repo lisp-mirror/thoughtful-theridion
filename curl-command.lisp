@@ -87,7 +87,9 @@
                      key-args
                      &key
                      (method :get) parameters
-                     curl-extra-args &allow-other-keys)
+                     curl-extra-args
+                     print-status-lines
+                     &allow-other-keys)
   (when (and parameters (equal method :get))
     (setf url (cl-ppcre:regex-replace "[?].*" url ""))
     (setf url (format nil "~a?~{~a=~a~#[~:;&~]~}"
@@ -110,6 +112,12 @@
                           :old url
                           :allow-other-keys t)
              `("-L"))
+         ,@(when (eq method :post)
+             (loop for p in parameters
+                   collect "--data-raw"
+                   collect (format nil "~a=~a"
+                                   (first p)
+                                   (urlencode-unsafe (rest p) :utf-8))))
          "-v"
          "--no-progress-meter"
          "--referer"
@@ -236,6 +244,10 @@
       (current-intended-url fetcher) url
       (current-headers fetcher) server-headers)
     (parse-obtained-content fetcher)
+    (when print-status-lines
+      (format *trace-output* 
+              "curl command status lines:~%~{~a~%~}" 
+              status-lines))
     (when
       (or (<= 300 status-code 399)
           (assoc :location server-headers)
@@ -253,6 +265,7 @@
                         :old url
                         :new (or location refresh requested-url url)
                         :content content-bytes
+                        :full-headers server-headers
                         :allow-other-keys t)))
         (when policy-url (apply 'navigate fetcher policy-url key-args))))
     (current-content fetcher))))
