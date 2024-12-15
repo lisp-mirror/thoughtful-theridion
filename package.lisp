@@ -43,5 +43,19 @@
     ;; Utility functions
     #:save-web-page
     #:save-web-form
+    ;; Entry series
+    #:content-series-id
+    #:content-series-eids
+    #:content-series-latest-eids
+    #:content-series-eid-known-p
+    #:content-series-eid-url
+    #:content-series-eid-containing-url
+    #:content-series-url-known-p
+    #:content-series-containing-url-known-p
+    #:content-series-add-webpage
+    #:content-series-add-file
+    #:content-series-add-plain-text
+    #:content-series-add-generated-file
+    #:blackhole-content-series
     ))
 
