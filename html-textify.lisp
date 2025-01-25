@@ -187,7 +187,23 @@
    (type (eql :element)) (tag (eql :table)) element)
   (format nil "~%~a~%" (call-next-method)))
 
+(defmethod html-element-to-text-dispatch
+  ((protocol html-textifier-protocol)
+   (type (eql :element)) (tag (eql :title)) element)
+  (format nil "~%~a~%" (call-next-method)))
+
 (defclass show-urls-mixin (html-textifier-protocol) ())
+
+(defmethod html-element-to-text
+  ((protocol show-urls-mixin) (element http-fetcher) &key base-url)
+  (format nil "→[ ~a ]~%~a"
+          (or
+            base-url
+            (and (current-url element)
+                 (format nil "~a" (current-url element)))
+            *base-url*)
+          (call-next-method)))
+
 
 (defmethod html-element-to-text-dispatch
   ((protocol show-urls-mixin) (type (eql :element)) tag element)
@@ -277,6 +293,40 @@
                      when v collect v))
          (text (call-next-method)))
     (if names (format nil "~{ ⚓[ ~a ]~}~a" names text) text)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol show-ui-texts-mixin) (type (eql :element)) (tag (eql :meta)) element)
+  (let* ((main (call-next-method))
+         (name (html5-parser:element-attribute element "name"))
+         (property (html5-parser:element-attribute element "property"))
+         (key (or name property))
+         (content (html5-parser:element-attribute element "content")))
+    (concatenate
+      'string
+      main
+      (or 
+        (and
+          key
+          content
+          (find key '(
+                       "twitter:title"
+                       "twitter:description"
+                       "og:title"
+                       "og:description"
+                       ) :test 'equalp)
+          (format nil " 🖹[[~%~a~%]] " content))
+        ""))))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol show-ui-texts-mixin) (type (eql :element)) (tag (eql :head)) element)
+  (apply
+    'concatenate 
+    'string
+    (append
+      (loop for title in (css-selectors:query "title" element)
+            collect
+            (html-element-to-text protocol title))
+      (list (call-next-method)))))
 
 (defclass show-id-texts-mixin (html-textifier-protocol) ())
 
