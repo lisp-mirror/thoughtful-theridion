@@ -368,6 +368,11 @@
 
 (defmethod html-element-to-text-dispatch
   ((protocol show-formatting-mixin)
+   (type (eql :element)) (tag (eql :del)) element)
+  (format nil "{-- ~a --}" (call-next-method)))
+
+(defmethod html-element-to-text-dispatch
+  ((protocol show-formatting-mixin)
    (type (eql :element)) (tag (eql :sup)) element)
   (format nil "{↑↑ ~a ↑↑}" (call-next-method)))
 
