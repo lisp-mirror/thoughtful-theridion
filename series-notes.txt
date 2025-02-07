@@ -1,0 +1,5 @@
+Web entry series might have:
+· Service for aggregate rate-limiting 
+· Sliding flag: do we lose old updates if we miss them
+· Priority/frequency, maybe
+· Some topic tags
