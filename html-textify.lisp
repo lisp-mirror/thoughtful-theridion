@@ -405,9 +405,69 @@
           (html5-parser:node-first-child
             element))))))
 
+(defclass show-inline-json-mixin (html-textifier-protocol) ())
+
+(defmethod html-element-to-text-dispatch
+  ((protocol show-inline-json-mixin)
+   (type (eql :element)) (tag (eql :script))
+   element)
+  (if (and
+        (equalp (html5-parser:element-attribute element "type")
+                "application/json")
+        (null (html5-parser:element-attribute element "src")))
+    (let* ((data (cl-json:decode-json-from-string
+                   (html5-parser:node-value
+                     (html5-parser:node-first-child
+                       element)))))
+      (with-output-to-string (s)
+        (labels
+          ((show-improper-list (x level)
+                               (loop for y := x then 
+                                     (if (consp y) (cdr y) nil)
+                                     while y
+                                     when (consp y) do
+                                     (show (car y) level)
+                                     when (consp y) do
+                                     (format s " ")
+                                     unless (consp y) do
+                                     (format s ". ")
+                                     unless (consp y) do
+                                     (format s "~s" y)))
+           (show (x level)
+                 (cond 
+                   ((not (listp x))
+                    (format s "~s" x))
+                   ((not (alexandria:proper-list-p x))
+                    (format s "(")
+                    (show-improper-list x (1+ level))
+                    (format s ")"))
+                   ((<= (length x) 3)
+                    (format s "(")
+                    (loop for y in x 
+                          for k downfrom (length x)
+                          do
+                          (show y (1+ level))
+                          (format s (if (= k 1) ")" " "))))
+                   (t 
+                     (format s "(")
+                     (loop for y in x 
+                           for k downfrom (length x)
+                           do
+                           (show y (1+ level))
+                           do (if (= k 1) (format s ")")
+                                (progn
+                                  (format s "~%")
+                                  (loop for i from 1 to level do
+                                        (format s " ")))))))))
+          (format s " 💾[~%")
+          (show data 0)
+          (format s "~%] "))))
+    (call-next-method)))
+
 (defclass html-textifier-protocol-formatting-inspector
   (recur-on-noscript-mixin
     show-formatting-mixin show-ui-texts-mixin show-urls-mixin
+    show-inline-json-mixin
     html-textifier-protocol) ())
 
 (defclass html-textifier-protocol-inspector
