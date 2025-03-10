@@ -207,7 +207,7 @@
 
 (defmethod html-element-to-text-dispatch
   ((protocol show-urls-mixin) (type (eql :element)) tag element)
-  (let* ((attributes '("href" "src" "data-expanded-url" "data-url"))
+  (let* ((attributes '("href" "src" "srcset" "data-expanded-url" "data-url"))
          (urls (loop for a in attributes
                      for v := (html5-parser:element-attribute element a)
                      when v collect (real-url v)))
