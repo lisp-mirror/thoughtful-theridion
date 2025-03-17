@@ -5,6 +5,7 @@
                           drakma-args html-textifier-protocol
                           html-content-score-protocol
                           skip-extract-main-content skip-cookies skip-forms
+                          main-content-selector
                           referrer
                           )
   (ensure-directories-exist (format nil "~a/" target))
@@ -41,15 +42,22 @@
                       )
                     (cl-ppcre:regex-replace-all
                       " *\\n *\\n"
-                      (let ((*base-url* (current-url f)))
-                        (html-extract-main-content 
-                          (parsed-content f)
-                          (or html-content-score-protocol
-                              (make-instance 'html-classname-score-protocol))
-                          (or 
-                            html-textifier-protocol
-                            (make-instance
-                              'html-textifier-protocol-formatting-inspector))))
+                      (let* ((*base-url* (current-url f))
+                             (textifier
+                               (or 
+                                 html-textifier-protocol
+                                 (make-instance
+                                   'html-textifier-protocol-formatting-inspector))))
+                        (if main-content-selector
+                          (html-element-to-text 
+                            textifier
+                            (css-selectors:query1 main-content-selector
+                                                  (parsed-content f)))
+                          (html-extract-main-content 
+                            (parsed-content f)
+                            (or html-content-score-protocol
+                                (make-instance 'html-classname-score-protocol))
+                            textifier)))
                       (coerce (list #\Newline #\Newline) 'string))))
                 "")
               (when (and (not skip-forms) (parsed-content f))
