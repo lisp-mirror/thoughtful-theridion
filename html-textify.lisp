@@ -415,10 +415,12 @@
         (equalp (html5-parser:element-attribute element "type")
                 "application/json")
         (null (html5-parser:element-attribute element "src")))
-    (let* ((data (cl-json:decode-json-from-string
-                   (html5-parser:node-value
-                     (html5-parser:node-first-child
-                       element)))))
+    (let* ((data
+             (ignore-errors
+               (cl-json:decode-json-from-string
+                 (html5-parser:node-value
+                   (html5-parser:node-first-child
+                     element))))))
       (with-output-to-string (s)
         (labels
           ((show-improper-list (x level)
