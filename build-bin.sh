@@ -5,8 +5,11 @@ cd "$(dirname "$0")"
 NO_RLWRAP=1 ./nix-load-lisp.sh --non-interactive --eval '
 (progn
   (setf cffi:*foreign-library-directories*
-        (cffi::explode-path-environment-variable
-          "LD_LIBRARY_PATH"))
+        (remove
+           ""
+           (uiop:split-string (uiop:getenv "LD_LIBRARY_PATH") 
+                              :separator ":")
+                              :test (function equalp)))
   (loop
     with libpath :=
     (uiop:split-string
