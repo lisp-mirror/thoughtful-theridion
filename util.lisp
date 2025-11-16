@@ -23,7 +23,7 @@
       (format out "~a~%" (current-content f)))
     (with-open-file (out (format nil "~a/~a.html.txt" target basename)
                          :direction :output)
-      (format out "→[ ~a ]~%→[ ~a ]~%→[ ~a ]~%~a~%~a~%~{~%(~{~s~%~})~%~%~}~{~S~%#.~S~%~}~%~a~%"
+      (format out "→[ ~a ]~%→[ ~a ]~%→[ ~a ]~%~a~%~a~%~{~%(~{~s~%~})~%~%~}~{~S~%#.~S~%~}~% ### ### ### ~%~a~%"
               url (current-url f) (current-decoded-url f)
               (or
                 (ignore-errors
@@ -61,8 +61,9 @@
                       (coerce (list #\Newline #\Newline) 'string))))
                 "")
               (when (and (not skip-forms) (parsed-content f))
-                (loop for form in (css-selectors:query
-                                    "form" (parsed-content f))
+                (loop for form in (ignore-errors
+                                    (css-selectors:query
+                                    "form" (parsed-content f)))
                       collect (form-parameters form :fetcher f)))
               (unless (or skip-cookies (null (cookie-jar f)))
                 (list
@@ -85,11 +86,21 @@
                                   ,(drakma:cookie-path c)
                                   :expires
                                   ,(drakma:cookie-expires c)))))))
-              (if (parsed-content f)
-                (html-element-to-text
-                  (or html-textifier-protocol
-                      (make-instance 'html-textifier-protocol-inspector)) f)
-                (parser-warnings f))))))
+              (cond
+                ((parsed-content f)
+                 (or
+                   (ignore-errors
+                     (html-element-to-text
+                       (or html-textifier-protocol
+                           (make-instance 'html-textifier-protocol-inspector)) f))
+                   (parsed-content f)))
+                ((parser-warnings f)
+                 (parser-warnings f))
+                ((cl-ppcre:scan 
+                   "^text/"
+                   (cdr (assoc :content-type (current-headers fetcher))))
+                 (current-content fetcher))
+                (t "."))))))
 
 (defun save-web-form (form-parameters target basename &key
                                       fetcher-parameters drakma-args 
