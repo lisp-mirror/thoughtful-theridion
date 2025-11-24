@@ -223,6 +223,8 @@
                             "\\2"
                             )))
          (urls (append urls bg-images))
+         (urls (remove-if (lambda (x) (cl-ppcre:scan "^data:" x))
+                          urls))
          (seen-urls (make-hash-table :test 'equal))
          (uniq-urls nil)
          (text (call-next-method)))
